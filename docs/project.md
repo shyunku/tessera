@@ -63,15 +63,19 @@ Tessera(구 Keyhub)는 로컬 전용 데스크톱 비밀번호/키 관리자다.
 - 확정 시안 결정 (2026-11-04): 포인트 색 틸(#1b6c80), 폴더 탐색은 사이드바 트리 + 연결선, 백업 가져오기는 '새 폴더에 추가'와 '모든 데이터 교체' 중 선택.
 - 구현 전에 HTML 시안(`docs/designs/*-mock.html`)으로 확정받는다.
 
-## 구조 (현대화 이전, v0.5.7 기준)
+## 구조 (0.6.0)
 
 | 영역 | 경로 | 설명 |
 | --- | --- | --- |
-| Electron 메인 | `public/electron/main.js` | 창 생성, IPC 핸들러, 팝업 창 관리 |
-| DB 계층 | `public/electron/sqlite.js`, `core-query.js`, `user-query.js` | core DB(계정) / 계정별 DB(폴더·항목·키페어) |
-| 경로 | `public/electron/path.js`, `file-manage.js` | dev: 레포 루트 `datafiles/v1`, build: `userData/datafiles/v1` |
-| 렌더러 | `src/components/pages/Login.js`, `Home.js` | 로그인, 탐색기 + 키페어 패널 |
-| 팝업 | `src/components/parts/AlertPopup.js`, `AskPopup.js` | 별도 창 팝업 |
+| 메인 진입점 | `electron/main.js` | 창, 보안 설정, 대화상자, 전원 이벤트 |
+| 세션 | `electron/service.js` | 잠금·자동 잠금, 잠금 해제 시도 제한, 클립보드, 설정, 백업, 마이그레이션 진입 |
+| IPC | `electron/ipc.js`, `electron/preload.cjs` | 렌더러가 부를 수 있는 API 전부 |
+| 암호화 | `electron/crypto/vault-crypto.js` | scrypt + 봉투 암호화 + AES-256-GCM |
+| 저장소 | `electron/store/db.js`, `vault.js` | `node:sqlite` 파일, 폴더·항목·키, 이동 실행 취소 |
+| 이전 데이터 | `electron/legacy/v1.js`, `migrate.js` | Keyhub 0.5 읽기·검증·변환 |
+| 백업 | `electron/backup.js` | `.tessera` 파일 |
+| 화면 | `src/` | React 19 (`App.jsx`, `screens/`) |
+| 테스트 | `test/` | `npm test`, `npm run test:electron` |
 
 ### v1 데이터 형식
 

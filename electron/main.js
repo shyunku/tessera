@@ -1,11 +1,16 @@
 import { app, BrowserWindow, clipboard, dialog, ipcMain, powerMonitor, session, shell } from "electron";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { configureUserData, dataDir, isDev, legacyDir, preloadPath, rendererIndex } from "./paths.js";
+import { configureUserData, dataDir, isDev, legacyDir, preloadPath, rendererIndex, repoRoot } from "./paths.js";
 import { Service } from "./service.js";
 import { registerIpc } from "./ipc.js";
 
 configureUserData();
+
+// A packaged build never exposes a debugging port (it would let other local programs read the page).
+if (!isDev && (app.commandLine.hasSwitch("remote-debugging-port") || app.commandLine.hasSwitch("remote-debugging-pipe"))) {
+  app.exit(1);
+}
 
 const devServerUrl = process.env.VITE_DEV_SERVER_URL;
 const pageUrl = isDev && devServerUrl ? devServerUrl : pathToFileURL(rendererIndex).href;
@@ -43,6 +48,7 @@ function createWindow() {
     backgroundColor: "#f4f6f8",
     titleBarStyle: "hidden",
     titleBarOverlay: { color: "#f4f6f8", symbolColor: "#5d5f60", height: 48 },
+    icon: isDev ? path.join(repoRoot, "resources", "icon.png") : undefined,
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,

@@ -12,7 +12,7 @@
     "build": "vite build",
     "start": "node scripts/start.mjs",
     "test": "node --test --test-reporter=spec \"test/**/*.test.js\"",
-    "pack:win": "vite build && electron-builder --win --x64",
+    "pack:win": "node scripts/pack.mjs",
     "postinstall": "node node_modules/electron/install.js",
     "test:electron": "node scripts/test-electron.mjs"
   },
@@ -53,7 +53,20 @@
     "nsis": {
       "oneClick": false,
       "perMachine": false,
-      "include": "win-installer.nsh"
+      "include": "win-installer.nsh",
+      "installerIcon": "resources/icon.ico",
+      "uninstallerIcon": "resources/icon.ico",
+      "shortcutName": "Tessera",
+      "artifactName": "Tessera-Setup-${version}.exe"
+    },
+    "artifactName": "Tessera-Setup-${version}.exe",
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true
     }
   }
 }
