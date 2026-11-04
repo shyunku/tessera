@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Keyhub 시안</title>
+<title>Tessera 시안</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -353,7 +353,7 @@ body.changed .win [data-new]{box-shadow:0 0 0 2px #e0a100 inset!important}
     <div class="wc"><i>__MIN__</i><i>__MAX__</i><i class="x">__X__</i></div>
     <div class="center">
       <div class="col" id="impForm" data-new>
-        <div class="brand">__MARK__<b>Keyhub</b></div>
+        <div class="brand">__MARK__<b>Tessera</b></div>
         <h1>이전 버전 데이터 가져오기</h1>
         <p class="sub">Keyhub 0.5에서 쓰던 <b>shyunku</b> 계정을 새 형식으로 옮깁니다. 비밀번호는 그대로 쓰며, 나중에 설정에서 바꿀 수 있습니다.</p>
         <label class="field"><span>shyunku 계정 비밀번호</span><input class="input" type="password" id="pwImp" placeholder="이전 버전에서 쓰던 비밀번호"></label>
@@ -362,7 +362,7 @@ body.changed .win [data-new]{box-shadow:0 0 0 2px #e0a100 inset!important}
         <div class="hint">원본 파일은 지우지 않고 그대로 둡니다.</div>
       </div>
       <div class="col" id="impRun" style="display:none" data-new>
-        <div class="brand">__MARK__<b>Keyhub</b></div>
+        <div class="brand">__MARK__<b>Tessera</b></div>
         <h1>가져오는 중</h1>
         <p class="sub">처음 한 번만 진행합니다. 창을 닫지 마세요.</p>
         <ul class="steps" id="steps">
@@ -383,9 +383,9 @@ body.changed .win [data-new]{box-shadow:0 0 0 2px #e0a100 inset!important}
     <div class="wc"><i>__MIN__</i><i>__MAX__</i><i class="x">__X__</i></div>
     <div class="center">
       <div class="col" data-new>
-        <div class="brand">__MARK__<b>Keyhub</b></div>
+        <div class="brand">__MARK__<b>Tessera</b></div>
         <h1>처음 시작하기</h1>
-        <p class="sub">Keyhub를 열 때 쓸 마스터 비밀번호를 정하세요.</p>
+        <p class="sub">Tessera를 열 때 쓸 마스터 비밀번호를 정하세요.</p>
         <label class="field"><span>비밀번호</span><input class="input" type="password" placeholder="8자 이상"></label>
         <label class="field"><span>비밀번호 확인</span><input class="input" type="password" placeholder="한 번 더 입력"></label>
         <div class="notice">비밀번호는 복구할 수 없습니다. 잊어버리면 저장한 데이터를 열 방법이 없으니 따로 적어 두세요.</div>
@@ -399,8 +399,8 @@ body.changed .win [data-new]{box-shadow:0 0 0 2px #e0a100 inset!important}
     <div class="wc"><i>__MIN__</i><i>__MAX__</i><i class="x">__X__</i></div>
     <div class="center">
       <div class="col">
-        <div class="brand">__MARK__<b>Keyhub</b></div>
-        <h1>Keyhub 잠금 해제</h1>
+        <div class="brand">__MARK__<b>Tessera</b></div>
+        <h1>Tessera 잠금 해제</h1>
         <p class="sub" id="lockSub">5분 동안 사용하지 않아 자동으로 잠겼습니다.</p>
         <label class="field"><span>비밀번호</span><input class="input" type="password" id="pw" placeholder="비밀번호 입력"></label>
         <div class="err" id="pwErr">비밀번호가 맞지 않습니다.</div>
@@ -414,7 +414,7 @@ body.changed .win [data-new]{box-shadow:0 0 0 2px #e0a100 inset!important}
   <section class="screen" id="s-vault">
     <div class="shell">
       <header class="top">
-        <div class="brand">__MARK__<b>Keyhub</b></div>
+        <div class="brand">__MARK__<b>Tessera</b></div>
         <label class="search"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="항목·키 이름 검색"><kbd>Ctrl K</kbd></label>
         <div class="lockinfo" data-new><span class="num" id="lockLeft">5:00 후 자동 잠금</span><button class="btn ghost icon" title="지금 잠그기" onclick="lockNow()">__LOCK__</button></div>
         <div class="wc"><i>__MIN__</i><i>__MAX__</i><i class="x">__X__</i></div>
@@ -471,7 +471,7 @@ const IC={
   MIN:'<svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg>',
   MAX:'<svg class="ic" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>',
   X:'<svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
-  MARK:'<svg class="mark" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="var(--accent)"/><circle cx="11" cy="14" r="4.5" fill="none" stroke="var(--accent-ink)" stroke-width="2"/><path d="M15.5 14H22M19.5 14v3.5M22 14v2.5" stroke="var(--accent-ink)" stroke-width="2" stroke-linecap="round"/></svg>',
+  MARK:'<svg class="mark" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="var(--accent)"/><rect x="7" y="7" width="6" height="6" rx="1.2" fill="var(--accent-ink)"/><rect x="15" y="7" width="6" height="6" rx="1.2" fill="var(--accent-ink)"/><rect x="7" y="15" width="6" height="6" rx="1.2" fill="var(--accent-ink)"/><rect x="15.75" y="15.75" width="4.5" height="4.5" rx="1" fill="none" stroke="var(--accent-ink)" stroke-width="1.5"/></svg>',
   CHECK:'<svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px;stroke-width:2.5"><path d="m5 12 5 5 9-10"/></svg>',
   LOCK:'<svg class="ic" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
   PLUS:'<svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
@@ -724,7 +724,7 @@ function renderSettings(){
     <div class="sw"><div class="st"><b>모든 데이터 삭제</b><span class="num">항목 ${items.length}개와 키 ${keys}개를 지우고 처음 시작하기 화면으로 돌아갑니다.</span></div><button class="btn danger" onclick="openModal('reset')">초기화</button></div>
   </div></div>`;
 }
-function importDesc(){const v=winEl.dataset.import;return v==='add'?'.keyhub 파일의 항목을 새 폴더에 추가합니다.':v==='replace'?'.keyhub 파일로 모든 데이터를 통째로 바꿉니다.':'.keyhub 파일의 항목을 새 폴더에 추가하거나, 모든 데이터를 통째로 바꿉니다.'}
+function importDesc(){const v=winEl.dataset.import;return v==='add'?'.tessera 파일의 항목을 새 폴더에 추가합니다.':v==='replace'?'.tessera 파일로 모든 데이터를 통째로 바꿉니다.':'.tessera 파일의 항목을 새 폴더에 추가하거나, 모든 데이터를 통째로 바꿉니다.'}
 
 /* ---------- modals ---------- */
 function radioClick(el){el.parentNode.querySelectorAll('.radio').forEach(r=>r.classList.remove('on'));el.classList.add('on')}
@@ -777,14 +777,14 @@ function openModal(kind,arg){
       <label class="field"><span>새 비밀번호 확인</span><input class="input" type="password"></label>
       <div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" onclick="closeModal()">변경</button></div>`;
   } else if(kind==='export'){
-    h=`<h3>백업 내보내기</h3><p class="num">항목 ${items.length}개, 폴더 ${folders.length}개를 .keyhub 파일 하나로 저장합니다. 파일은 마스터 비밀번호로 암호화됩니다.</p>
+    h=`<h3>백업 내보내기</h3><p class="num">항목 ${items.length}개, 폴더 ${folders.length}개를 .tessera 파일 하나로 저장합니다. 파일은 마스터 비밀번호로 암호화됩니다.</p>
       <label class="field"><span>비밀번호 확인</span><input class="input" type="password" placeholder="마스터 비밀번호"></label>
       <div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" onclick="closeModal()">저장 위치 선택…</button></div>`;
   } else if(kind==='import'){
     const v=winEl.dataset.import;
     const add=`<div class="radio ${v!=='replace'?'on':''}" onclick="radioClick(this)"><i></i><div><b>새 폴더에 추가</b><span>‘가져옴 2026-11-04’ 폴더를 만들고 그 안에 넣습니다. 지금 있는 항목은 그대로 둡니다.</span></div></div>`;
     const rep=`<div class="radio ${v==='replace'?'on':''}" onclick="radioClick(this)"><i></i><div><b>모든 데이터 교체</b><span>지금 데이터를 모두 지우고 백업 내용으로 바꿉니다. 바꾸기 전에 지금 상태를 자동으로 백업해 둡니다.</span></div></div>`;
-    h=`<h3>백업 가져오기</h3><p>keyhub-2026-11-01.keyhub · 항목 12개, 폴더 8개</p>
+    h=`<h3>백업 가져오기</h3><p>tessera-2026-11-01.tessera · 항목 12개, 폴더 8개</p>
       <label class="field"><span>백업 파일 비밀번호</span><input class="input" type="password" placeholder="백업을 만들 때의 마스터 비밀번호"></label>
       <div>${add+rep}</div>
       <div class="acts" style="margin-top:16px"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" onclick="closeModal()">가져오기</button></div>`;
@@ -847,7 +847,7 @@ addEventListener('blur',()=>{shift=false;document.body.classList.remove('hit')})
 document.addEventListener('mousedown',e=>{if(!e.target.closest('#pop'))hidePop()});
 $('#chg').addEventListener('change',e=>document.body.classList.toggle('changed',e.target.checked));
 function resultText(){
-  return 'Keyhub 시안 선택 결과\n'+Object.keys(CANDS).map(k=>{const c=CANDS[k];const n=c.opts.findIndex(o=>o.v===winEl.dataset[k]);const o=c.opts[n];
+  return 'Tessera 시안 선택 결과\n'+Object.keys(CANDS).map(k=>{const c=CANDS[k];const n=c.opts.findIndex(o=>o.v===winEl.dataset[k]);const o=c.opts[n];
     return `- ${c.label}: 옵션${n} ${o.name}${o.old?' [기존]':''}${o.rec?' [추천]':''}`}).join('\n');
 }
 $('#copyRes').onclick=async()=>{

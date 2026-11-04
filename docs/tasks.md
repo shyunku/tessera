@@ -19,5 +19,5 @@
 | 5 | 2026-11-01 18:58 | 🔴 TODO | | #4 | v2 저장소 및 IPC API | 이름·값 전부 암호화 저장, 세션 기반 API, 트랜잭션 처리, 입력 검증, 테스트 통과 |
 | 4 | 2026-11-01 18:58 | 🔴 TODO | | #3 | Vault 암호화 모듈 | KDF + DEK 래핑 + AES-256-GCM 구현, 변조·오답 비밀번호 테스트 통과, 적대적 리뷰 반영 |
 | 3 | 2026-11-04 11:36 | 🟡 WIP | | #1 | 툴체인 현대화 (Electron, Vite, React 19, 보안 구조, 버전 0.6.0) | 최신 Electron + Vite로 dev 실행·빌드 성공, contextIsolation/sandbox/preload 적용, 구 의존성 제거, lockfile 하나, 버전 0.6.0 |
-| 2 | 2026-11-04 11:36 | 🟢 DONE | 2026-11-04 11:36 | #1 | 전면 리디자인 HTML 시안 | `docs/designs/keyhub-mock.html` 작성, 사용자 확정 |
+| 2 | 2026-11-04 11:36 | 🟢 DONE | 2026-11-04 11:36 | #1 | 전면 리디자인 HTML 시안 | `docs/designs/tessera-mock.html` 작성, 사용자 확정 |
 | 1 | 2026-11-01 19:05 | 🟢 DONE | 2026-11-01 19:05 | | 문서 및 작업 환경 정리 | `docs/project.md`, `docs/tasks.md`, `docs/plans.md` 작성, `.local` gitignore 추가 |
