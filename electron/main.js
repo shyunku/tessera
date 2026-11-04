@@ -1,6 +1,6 @@
 import { app, BrowserWindow, clipboard, ipcMain, session, shell } from "electron";
 import { pathToFileURL } from "node:url";
-import { configureUserData, dataDir, isDev, preloadPath, rendererIndex } from "./paths.js";
+import { configureUserData, dataDir, isDev, legacyDir, preloadPath, rendererIndex } from "./paths.js";
 import { Service } from "./service.js";
 import { registerIpc } from "./ipc.js";
 
@@ -107,7 +107,7 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     harden();
-    service = new Service({ dataDir: dataDir(), clipboard, emit });
+    service = new Service({ dataDir: dataDir(), legacyDir: legacyDir(), clipboard, emit });
     registerIpc(service, isTrustedSender);
     registerAppIpc();
     createWindow();

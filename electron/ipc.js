@@ -13,6 +13,7 @@ export function registerIpc(service, isTrustedSender) {
     "vault:create": (p) => service.create(str(p?.password)),
     "vault:unlock": (p) => service.unlock(str(p?.password)),
     "vault:lock": () => service.lock("manual"),
+    "legacy:migrate": (p) => service.migrateLegacy(str(p?.password)),
 
     "data:snapshot": () => v().snapshot(),
     "item:open": (p) => v().openItem(str(p?.id)),

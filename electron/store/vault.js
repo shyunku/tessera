@@ -478,6 +478,119 @@ export class Vault {
     , () => label);
   }
 
+  // ---------- bulk import / export (migration and backups) ----------
+
+  // data: { folders: [{ key, parentKey, name }], items: [{ key, folderKey, name, favorite,
+  //         viewCount, lastViewedAt, createdAt, fields: [{ name, value }] }] }
+  // Everything lands under parentId (null = top level) in one transaction.
+  importData(data, { parentId = null } = {}) {
+    const db = this._need();
+    const folders = Array.isArray(data?.folders) ? data.folders : [];
+    const items = Array.isArray(data?.items) ? data.items : [];
+    const keyToId = new Map();
+    const count = { folders: 0, items: 0, fields: 0 };
+    tx(db, () => {
+      const root = this._checkParent(parentId);
+      const keys = new Set(folders.map((f) => f.key));
+      const insFolder = db.prepare(
+        "INSERT INTO folders(id, parent_id, position, name, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
+      );
+      const nextPos = new Map();
+      const posFor = (parent) => {
+        if (!nextPos.has(parent)) nextPos.set(parent, this._children(parent).length);
+        const p = nextPos.get(parent);
+        nextPos.set(parent, p + 1);
+        return p;
+      };
+      // parents first, in the given order among siblings
+      const pending = folders.slice();
+      while (pending.length) {
+        const before = pending.length;
+        for (let i = 0; i < pending.length; ) {
+          const f = pending[i];
+          const pk = f.parentKey != null && keys.has(f.parentKey) ? f.parentKey : null;
+          if (pk != null && !keyToId.has(pk)) {
+            i++;
+            continue;
+          }
+          const parent = pk == null ? root : keyToId.get(pk);
+          const id = uuid();
+          const t = now();
+          insFolder.run(id, parent, posFor(parent), this._seal("folders", "name", id, cleanName(f.name, "폴더 이름")), t, t);
+          keyToId.set(f.key, id);
+          count.folders += 1;
+          pending.splice(i, 1);
+        }
+        if (pending.length === before) throw new VaultError("invalid", "폴더 구조가 올바르지 않습니다.");
+      }
+      const insItem = db.prepare(
+        "INSERT INTO items(id, folder_id, name, favorite, view_count, last_viewed_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+      );
+      for (const it of items) {
+        const id = uuid();
+        const folder = it.folderKey != null && keyToId.has(it.folderKey) ? keyToId.get(it.folderKey) : root;
+        const created = Number.isSafeInteger(it.createdAt) ? it.createdAt : now();
+        insItem.run(
+          id,
+          folder,
+          this._seal("items", "name", id, cleanName(it.name, "항목 이름")),
+          it.favorite ? 1 : 0,
+          Number.isSafeInteger(it.viewCount) && it.viewCount > 0 ? it.viewCount : 0,
+          Number.isSafeInteger(it.lastViewedAt) ? it.lastViewedAt : null,
+          created,
+          Number.isSafeInteger(it.updatedAt) ? it.updatedAt : created
+        );
+        this._writeFields(id, Array.isArray(it.fields) ? it.fields : []);
+        keyToId.set(it.key, id);
+        count.items += 1;
+        count.fields += Array.isArray(it.fields) ? it.fields.length : 0;
+      }
+    });
+    this._barrier("가져오기");
+    return { ...count, ids: keyToId };
+  }
+
+  // Plain tree of everything, values included (for backups). Same shape importData takes.
+  exportData() {
+    const db = this._need();
+    const folders = db
+      .prepare("SELECT id, parent_id, position, name FROM folders ORDER BY position")
+      .all()
+      .map((f) => ({ key: f.id, parentKey: f.parent_id, position: f.position, name: this._open1("folders", "name", f.id, f.name) }));
+    // keep sibling order: parents' children sorted by position
+    folders.sort((a, b) => a.position - b.position);
+    const items = db
+      .prepare("SELECT * FROM items")
+      .all()
+      .map((i) => ({
+        key: i.id,
+        folderKey: i.folder_id,
+        name: this._open1("items", "name", i.id, i.name),
+        favorite: !!i.favorite,
+        viewCount: i.view_count,
+        lastViewedAt: i.last_viewed_at,
+        createdAt: i.created_at,
+        updatedAt: i.updated_at,
+        fields: db
+          .prepare("SELECT id, name, value FROM fields WHERE item_id = ? ORDER BY position")
+          .all(i.id)
+          .map((f) => ({
+            name: this._open1("fields", "name", `${i.id}/${f.id}`, f.name),
+            value: this._open1("fields", "value", `${i.id}/${f.id}`, f.value),
+          })),
+      }));
+    return { folders: folders.map(({ position, ...f }) => f), items };
+  }
+
+  // Removes every folder and item (keyring and settings stay).
+  clearData() {
+    const db = this._need();
+    tx(db, () => {
+      db.exec("DELETE FROM fields; DELETE FROM items; UPDATE folders SET parent_id = NULL; DELETE FROM folders;");
+    });
+    this._barrier("데이터 교체");
+  }
+
   // ---------- undo / redo (moves only) ----------
 
   _structure() {

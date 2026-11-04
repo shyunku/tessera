@@ -3,6 +3,8 @@
 import fs from "node:fs";
 import path from "node:path";
 import { Vault, VaultError } from "./store/vault.js";
+import { detectLegacy } from "./legacy/v1.js";
+import { migrateLegacy } from "./legacy/migrate.js";
 import { WrongPasswordError, CorruptDataError } from "./crypto/vault-crypto.js";
 
 // A damaged file must never look like a wrong password: the user might then reset and lose data.
@@ -39,15 +41,38 @@ function checkNewPassword(pw) {
 
 export class Service {
   // deps: { dataDir, clipboard, emit(event, payload), legacy? }
-  constructor({ dataDir, clipboard, emit, kdf }) {
+  constructor({ dataDir, clipboard, emit, kdf, legacyDir }) {
     fs.mkdirSync(dataDir, { recursive: true });
+    this.kdf = kdf;
+    this.legacyDir = legacyDir;
     this.vault = new Vault(path.join(dataDir, "tessera.db"), kdf ? { kdf } : undefined);
     this.clipboard = clipboard;
     this.emit = emit || (() => {});
     this.fails = 0;
     this.lockedUntil = 0;
     this.clip = null; // { text, timer, until }
-    this.extraStatus = () => ({});
+  }
+
+  // Old Keyhub data is offered only while there is no Tessera data yet.
+  legacyInfo() {
+    if (this.vault.state !== "empty") return null;
+    const l = detectLegacy(this.legacyDir);
+    return l ? { account: l.account } : null;
+  }
+
+  async migrateLegacy(password) {
+    if (this.vault.state !== "empty") throw new VaultError("exists", "이미 데이터가 있습니다.");
+    const file = this.vault.file;
+    this.vault.close();
+    const report = await migrateLegacy({
+      legacyDir: this.legacyDir,
+      dataFile: file,
+      password,
+      kdf: this.kdf,
+      onProgress: (p) => this.emit("legacy:progress", p),
+    });
+    await this.vault.unlock(password);
+    return { report, status: this.status() };
   }
 
   // ---------- session ----------
@@ -61,8 +86,8 @@ export class Service {
       state: this.vault.state,
       settings: this.settings(),
       lockedUntil: this.lockedUntil > Date.now() ? this.lockedUntil : 0,
-      createdAt: Number(this.vault.meta("created_at")) || null,
-      ...this.extraStatus(),
+      createdAt: this.vault.state === "empty" ? null : Number(this.vault.meta("created_at")) || null,
+      legacy: this.legacyInfo(),
     };
   }
 
