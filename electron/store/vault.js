@@ -378,7 +378,7 @@ export class Vault {
   moveFolder(id, parentId, index) {
     const db = this._need();
     let label;
-    this._recordMove(() =>
+    return this._recordMove(() =>
       tx(db, () => {
         const f = this._folderRow(id);
         const p = this._checkParent(parentId);
@@ -468,7 +468,7 @@ export class Vault {
   moveItem(id, folderId) {
     const db = this._need();
     let label;
-    this._recordMove(() =>
+    return this._recordMove(() =>
       tx(db, () => {
         const r = this._itemRow(id);
         const f = this._checkParent(folderId);
@@ -614,8 +614,10 @@ export class Vault {
   _recordMove(run, label) {
     const before = this._structure();
     run();
-    this.history.undo.push({ label: label(), before, after: this._structure() });
+    const entry = { label: label(), before, after: this._structure() };
+    this.history.undo.push(entry);
     this.history.redo = [];
+    return { label: entry.label };
   }
 
   _barrier(label) {
