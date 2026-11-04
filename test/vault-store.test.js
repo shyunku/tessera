@@ -231,3 +231,23 @@ test("password change rotates the key: an old copy plus the old password cannot 
   await w.unlock("new-pw");
   assert.equal(w.revealField(w.getItem(id).fields[0].id), "after");
 });
+
+test("favorites and recent views come from the snapshot", async () => {
+  const { v } = await fresh();
+  const a = v.createItem(null, "A");
+  const b = v.createItem(null, "B");
+  v.setFavorite(b, true);
+  let s = v.snapshot();
+  assert.deepEqual(s.items.filter((i) => i.favorite).map((i) => i.name), ["B"]);
+  assert.equal(s.items.find((i) => i.id === a).lastViewedAt, null);
+  v.openItem(a);
+  await new Promise((r) => setTimeout(r, 5));
+  v.openItem(b);
+  v.getItem(a); // auto-selection does not count as a view
+  s = v.snapshot();
+  const recent = s.items.filter((i) => i.lastViewedAt).sort((x, y) => y.lastViewedAt - x.lastViewedAt).map((i) => i.name);
+  assert.deepEqual(recent, ["B", "A"]);
+  assert.equal(s.items.find((i) => i.id === a).viewCount, 1);
+  v.setFavorite(b, false);
+  assert.equal(v.snapshot().items.some((i) => i.favorite), false);
+});
