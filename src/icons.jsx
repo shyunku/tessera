@@ -31,15 +31,29 @@ export function Icon({ name, size, style, ...rest }) {
   );
 }
 
-// 2x2 mosaic tile, one tile left open (the Tessera mark).
+// The Tessera mark: four rounded tiles turned into a diamond, one in cyan.
+// Same drawing as resources/icon.svg; small sizes get wider gaps so the tiles stay apart.
+const TILE_COLORS = { top: "#d3def6", left: "#7783b3", right: "#37d7dc", bottom: "#66709a" };
 export function Mark({ size = 28 }) {
+  const small = size <= 24;
+  const s = small ? 5 : 5.4;
+  const gap = small ? 1.5 : 0.9;
+  const rx = small ? 0.8 : 1.1;
+  const k = (s + gap) / Math.SQRT2;
+  const sw = 28 / size; // one device pixel
+  const tiles = [
+    [14, 14 - k, TILE_COLORS.top],
+    [14 - k, 14, TILE_COLORS.left],
+    [14 + k, 14, TILE_COLORS.right],
+    [14, 14 + k, TILE_COLORS.bottom],
+  ];
   return (
     <svg className="mark" viewBox="0 0 28 28" width={size} height={size} aria-hidden="true">
-      <rect width="28" height="28" rx="7" fill="var(--accent)" />
-      <rect x="7" y="7" width="6" height="6" rx="1.2" fill="var(--accent-ink)" />
-      <rect x="15" y="7" width="6" height="6" rx="1.2" fill="var(--accent-ink)" />
-      <rect x="7" y="15" width="6" height="6" rx="1.2" fill="var(--accent-ink)" />
-      <rect x="15.75" y="15.75" width="4.5" height="4.5" rx="1" fill="none" stroke="var(--accent-ink)" strokeWidth="1.5" />
+      <rect width="28" height="28" rx="7" fill="#121b3f" />
+      <rect x={sw / 2} y={sw / 2} width={28 - sw} height={28 - sw} rx={7 - sw / 2} fill="none" stroke="rgba(255,255,255,.14)" strokeWidth={sw} />
+      {tiles.map(([x, y, fill]) => (
+        <rect key={fill} x={-s / 2} y={-s / 2} width={s} height={s} rx={rx} fill={fill} transform={`translate(${x} ${y}) rotate(45)`} />
+      ))}
     </svg>
   );
 }

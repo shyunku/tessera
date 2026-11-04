@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tessera 아이콘 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--font:"IBM Plex Sans KR",system-ui,sans-serif;--acc:#1b6c80;--acc-soft:#e3eff2}
+*{box-sizing:border-box}
+html,body{margin:0;background:#d9dcdf;font-family:var(--font);color:#131416}
+body{min-height:100vh;padding:32px;display:flex;gap:32px;align-items:flex-start;justify-content:center}
+.stage{display:flex;flex-direction:column;gap:24px;flex:none}
+
+/* app window (light, real size) */
+.win{width:1100px;height:720px;position:relative;overflow:hidden;border-radius:8px;background:#f4f6f8;
+  box-shadow:0 20px 60px rgba(0,0,0,.25),0 0 0 1px rgba(0,0,0,.08);font-size:14px;line-height:20px;
+  display:grid;grid-template-columns:228px 1fr;grid-template-rows:48px 1fr}
+.top{grid-column:1/-1;display:flex;align-items:center;padding-right:140px;position:relative}
+.brand{display:flex;align-items:center;gap:8px;padding-left:16px;width:228px}
+.brand b{font-size:15px;font-weight:600}
+.search{flex:1;max-width:460px;margin:0 auto;height:32px;border-radius:8px;background:#fff;border:1px solid #e5e8eb;display:flex;align-items:center;padding:0 10px;color:#6b6d70}
+.wc{position:absolute;top:0;right:0;display:flex}
+.wc i{width:46px;height:48px;display:grid;place-items:center;color:#5d5f60}
+.side{padding:4px 10px}
+.nav{display:flex;align-items:center;gap:10px;height:32px;padding:0 8px;border-radius:8px;color:#5d5f60}
+.nav.on{background:var(--acc-soft);color:var(--acc);font-weight:500}
+.sheet{margin:0 8px 8px 0;background:#fff;border:1px solid #e5e8eb;border-radius:16px;display:grid;place-items:center}
+.unlock{width:380px}
+.unlock .brand{padding:0;width:auto;gap:10px;margin-bottom:28px}
+.unlock .brand b{font-size:18px}
+.unlock h1{font-size:22px;font-weight:600;margin:0 0 4px;line-height:28px}
+.unlock p{color:#5d5f60;margin:0 0 24px}
+.unlock label{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;font-weight:500}
+.unlock .in{height:40px;border:1px solid #e5e8eb;border-radius:6px;background:#fff;padding:0 12px;display:flex;align-items:center;color:#6b6d70;font-weight:400}
+.unlock .btn{height:40px;border-radius:6px;background:var(--acc);color:#fff;display:grid;place-items:center;font-weight:500}
+svg.ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+
+/* OS previews */
+.os{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.panel{border-radius:8px;padding:16px;display:flex;align-items:flex-end;gap:28px;min-height:140px}
+.panel.desk{background:linear-gradient(135deg,#2c5f8a,#4f8fb8)}
+.panel.dark{background:#1f1f1f}
+.panel .cap{font-size:12px;color:rgba(255,255,255,.75);margin-top:6px;text-align:center}
+.shortcut{display:flex;flex-direction:column;align-items:center;width:76px}
+.shortcut span{font-size:12px;color:#fff;margin-top:4px;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.taskbar{flex:1;height:48px;background:rgba(32,32,32,.92);border-radius:6px;display:flex;align-items:center;justify-content:center;gap:6px}
+.taskbar .tb{width:40px;height:40px;border-radius:4px;display:grid;place-items:center;position:relative}
+.taskbar .tb.on{background:rgba(255,255,255,.08)}
+.taskbar .tb.on::after{content:"";position:absolute;bottom:1px;width:16px;height:3px;border-radius:2px;background:#60cdff}
+.taskbar .other{width:24px;height:24px;border-radius:5px;background:#3a3a3a}
+.big{display:flex;gap:16px;align-items:flex-end}
+
+/* notes */
+.notes{width:320px;flex:none;background:#fff;border-radius:12px;font-size:14px;line-height:1.5;position:sticky;top:32px;height:calc(100vh - 64px);min-height:320px;display:flex;flex-direction:column;overflow:hidden}
+.notes .nh{padding:20px 20px 10px;border-bottom:1px solid #eceef0}
+.notes .nh-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.notes h2{font-size:16px;margin:0;font-weight:600}
+.notes .lead{color:#5d5f60;font-size:13px;margin:4px 0 0}
+.notes .nb{flex:1;overflow:auto;padding:0 20px 16px}
+.copybtn{height:32px;padding:0 12px;border-radius:6px;border:0;background:#131416;color:#fff;font:inherit;font-weight:500;cursor:pointer}
+.copybtn.ok{background:#1e7b4f}
+.dec{padding:12px 0;border-top:1px solid #eceef0}
+.nb .dec:first-child{border-top:0}
+.dec>b{display:block;font-weight:600;margin-bottom:6px}
+.opt{border-radius:8px;margin-bottom:2px}
+.opt.on{background:#e3eff2;box-shadow:inset 3px 0 0 #1b6c80}
+.opt button.row{display:flex;gap:10px;align-items:center;width:100%;border:0;background:transparent;font:inherit;color:inherit;text-align:left;padding:8px;border-radius:8px;cursor:pointer}
+.opt:not(.on) button.row:hover{background:#f2f4f5}
+.opt .thumb{width:32px;height:32px;flex:none}
+.opt .ol{flex:1;min-width:0}
+.opt .nm{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.opt.on .nm{font-weight:500}
+.opt .ol>span:not(.nm){display:block;font-size:12px;color:#5d5f60;line-height:17px;margin-top:2px}
+.opt textarea{display:block;width:calc(100% - 16px);margin:0 8px 8px 50px;width:calc(100% - 58px);min-height:52px;border:1px solid #cdced1;border-radius:6px;padding:6px 8px;font:inherit;font-size:13px;resize:vertical;background:#fff}
+.opt textarea:focus{outline:none;border-color:#1b6c80;box-shadow:0 0 0 3px rgba(27,108,128,.18)}
+.badge{font-style:normal;display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:10px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge.old{background:#ebedee;color:#353736}
+.badge.rec{background:#d8eef3;color:#0f4b5a}
+.notes label.chg{display:flex;gap:8px;align-items:center;margin-top:8px;padding-top:12px;border-top:1px solid #eceef0;color:#5d5f60;cursor:pointer}
+
+/* mock tools */
+body.hit .stage [data-cand]{outline:2px dashed #1b6c80;outline-offset:3px}
+body.hit .stage .clickable{outline:1.5px dashed #e0457b;outline-offset:1px}
+.cand-pop{position:fixed;z-index:1000;background:#fff;border-radius:10px;padding:8px;box-shadow:0 10px 30px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06);display:none;width:320px;font-size:14px}
+.cand-pop.on{display:block}
+.cand-pop>b{display:block;font-weight:600;margin:2px 6px 6px}
+.cand-pop textarea{margin-left:50px}
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="win">
+    <header class="top">
+      <div class="brand" data-cand="icon"><span class="mk" data-size="28"></span><b>Tessera</b></div>
+      <div class="search"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>&nbsp; 항목·키 이름 검색</div>
+      <div class="wc"><i><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg></i><i><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1"/></svg></i><i><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></i></div>
+    </header>
+    <aside class="side">
+      <div class="nav on" data-cand="accent">모든 항목</div><div class="nav">즐겨찾기</div><div class="nav">최근 본 항목</div>
+    </aside>
+    <main class="sheet">
+      <div class="unlock" data-cand="icon">
+        <div class="brand"><span class="mk" data-size="28"></span><b>Tessera</b></div>
+        <h1>Tessera 잠금 해제</h1>
+        <p>비밀번호를 입력하세요.</p>
+        <label>비밀번호<span class="in">비밀번호 입력</span></label>
+        <div class="btn clickable" data-cand="accent">잠금 해제</div>
+      </div>
+    </main>
+  </div>
+
+  <div class="os" data-cand="icon">
+    <div class="panel desk">
+      <div class="shortcut"><span class="mk" data-size="48" data-os="1"></span><span>Tessera</span></div>
+      <div class="big"><div><span class="mk" data-size="64" data-os="1"></span><div class="cap">64</div></div><div><span class="mk" data-size="96" data-os="1"></span><div class="cap">96</div></div></div>
+    </div>
+    <div class="panel dark" style="flex-direction:column;align-items:stretch;justify-content:flex-end">
+      <div style="display:flex;gap:20px;align-items:flex-end;margin-bottom:12px">
+        <div><span class="mk" data-size="16" data-os="1"></span><div class="cap">16</div></div>
+        <div><span class="mk" data-size="24" data-os="1"></span><div class="cap">24</div></div>
+        <div><span class="mk" data-size="32" data-os="1"></span><div class="cap">32</div></div>
+      </div>
+      <div class="taskbar"><span class="other"></span><span class="other"></span><span class="tb on"><span class="mk" data-size="24" data-os="1"></span></span><span class="other"></span></div>
+    </div>
+  </div>
+</div>
+
+<aside class="notes">
+  <div class="nh">
+    <div class="nh-row"><h2>결정할 것</h2><button class="copybtn" id="copyRes">결과 복사</button></div>
+    <p class="lead">옵션을 누르면 시안이 바로 바뀌고, 의견을 적을 수 있습니다.</p>
+  </div>
+  <div class="nb">
+    <div id="decList"></div>
+    <label class="chg"><input type="checkbox" id="chg"> 새로 생기는 부분 표시</label>
+  </div>
+</aside>
+<div class="cand-pop" id="pop"></div>
+
+<script>
+const W = "#ffffff";
+// --- icons: viewBox 0 0 28 28; fn(size) so small sizes can widen gaps ---
+function mosaic() {
+  const T = "#1b6c80";
+  return `<rect width="28" height="28" rx="7" fill="${T}"/><rect x="7" y="7" width="6" height="6" rx="1.2" fill="${W}"/><rect x="15" y="7" width="6" height="6" rx="1.2" fill="${W}"/><rect x="7" y="15" width="6" height="6" rx="1.2" fill="${W}"/><rect x="15.75" y="15.75" width="4.5" height="4.5" rx="1" fill="none" stroke="${W}" stroke-width="1.5"/>`;
+}
+// four rounded tiles turned 45 degrees into a diamond; one tile in the accent colour
+function diamond({ bg, edge, colors, s = 5.4, gap = 0.9, rx = 1.1 }) {
+  const k = (s + gap) / Math.SQRT2;
+  const c = [[14, 14 - k, colors.top], [14 - k, 14, colors.left], [14 + k, 14, colors.right], [14, 14 + k, colors.bottom]];
+  const tiles = c.map(([x, y, f]) => `<rect x="${-s / 2}" y="${-s / 2}" width="${s}" height="${s}" rx="${rx}" fill="${f}" transform="translate(${x} ${y}) rotate(45)"/>`).join("");
+  return `<rect width="28" height="28" rx="7" fill="${bg}"/>${edge ? `<rect x=".5" y=".5" width="27" height="27" rx="6.5" fill="none" stroke="${edge}"/>` : ""}${tiles}`;
+}
+const SENT = { top: "#d3def6", left: "#7783b3", bottom: "#5d6588", right: "#37d7dc" };
+const ICONS = {
+  mosaic: () => mosaic(),
+  diamond: () => diamond({ bg: "#070d26", colors: SENT }),
+  diamondTuned: (size) => diamond({ bg: "#121b3f", edge: "rgba(255,255,255,.14)", colors: { ...SENT, bottom: "#66709a" }, s: size <= 24 ? 5.0 : 5.4, gap: size <= 24 ? 1.5 : 0.9, rx: size <= 24 ? 0.8 : 1.1 }),
+};
+const ACCENTS = {
+  teal: { acc: "#1b6c80", soft: "#e3eff2" },
+  cyan: { acc: "#0f7d87", soft: "#dff4f5" },
+};
+const DECISIONS = [
+  { key: "icon", label: "앱 아이콘", opts: [
+    { v: "mosaic", name: "모자이크 타일", desc: "지금 아이콘", old: true },
+    { v: "diamond", name: "다이아몬드 모자이크 · 보내 준 그대로", desc: "검은 남색 배경, 4장 타일 중 오른쪽 한 장만 청록" },
+    { v: "diamondTuned", name: "다이아몬드 모자이크 · 대비 보정", desc: "배경을 조금 밝히고 얇은 테두리를 넣어 어두운 작업 표시줄에서도 보이게, 24px 이하에선 타일 간격을 넓힘", rec: true },
+  ]},
+  { key: "accent", label: "앱 포인트 색", opts: [
+    { v: "teal", name: "틸", desc: "지금 색 #1b6c80 (버튼·선택 항목)", old: true },
+    { v: "cyan", name: "아이콘 청록에 맞춤", desc: "#0f7d87. 흰 글자와 대비가 맞게 아이콘 청록보다 진하게", rec: true },
+  ]},
+];
+const state = { icon: "mosaic", accent: "teal", notes: {} };
+const svg = (k, size) => `<svg viewBox="0 0 28 28" width="${size}" height="${size}" style="display:block;flex:none">${ICONS[k](size)}</svg>`;
+const thumb = (d, o) => d.key === "icon" ? svg(o.v, 32) : `<span style="display:block;width:32px;height:32px;border-radius:8px;background:${ACCENTS[o.v].acc}"></span>`;
+
+function paint() {
+  document.querySelectorAll(".mk").forEach((el) => (el.innerHTML = svg(state.icon, +el.dataset.size)));
+  const a = ACCENTS[state.accent];
+  document.documentElement.style.setProperty("--acc", a.acc);
+  document.documentElement.style.setProperty("--acc-soft", a.soft);
+  renderDec();
+  if (pop.classList.contains("on")) fillPop(pop.dataset.k);
+}
+function optRows(d) {
+  return d.opts.map((o) => {
+    const on = state[d.key] === o.v;
+    const nk = `${d.key}:${o.v}`;
+    return `<div class="opt${on ? " on" : ""}"><button class="row" data-k="${d.key}" data-pick="${o.v}"><span class="thumb">${thumb(d, o)}</span><span class="ol"><span class="nm">${o.name}${o.old ? '<i class="badge old">기존</i>' : ""}${o.rec ? '<i class="badge rec">추천</i>' : ""}</span><span>${o.desc}</span></span></button>${on ? `<textarea data-note="${nk}" placeholder="이 옵션에 대한 의견 (선택)">${(state.notes[nk] || "").replace(/</g, "&lt;")}</textarea>` : ""}</div>`;
+  }).join("");
+}
+function renderDec() {
+  document.getElementById("decList").innerHTML = DECISIONS.map((d) => `<div class="dec"><b>${d.label}</b>${optRows(d)}</div>`).join("");
+}
+document.addEventListener("click", (e) => {
+  const b = e.target.closest("[data-pick]");
+  if (!b) return;
+  state[b.dataset.k] = b.dataset.pick;
+  paint();
+  const scope = b.closest("#pop") ? pop : document.getElementById("decList");
+  scope.querySelector(`textarea[data-note="${b.dataset.k}:${b.dataset.pick}"]`)?.focus();
+});
+document.addEventListener("input", (e) => {
+  const t = e.target.closest("[data-note]");
+  if (!t) return;
+  state.notes[t.dataset.note] = t.value;
+  document.querySelectorAll(`textarea[data-note="${t.dataset.note}"]`).forEach((x) => x !== t && (x.value = t.value));
+});
+document.getElementById("copyRes").onclick = async () => {
+  const lines = DECISIONS.map((d) => {
+    const o = d.opts.find((x) => x.v === state[d.key]);
+    const note = (state.notes[`${d.key}:${o.v}`] || "").trim();
+    return `- ${d.label}: ${o.name}${o.old ? " [기존]" : ""}${o.rec ? " [추천]" : ""}${note ? `\n  의견: ${note}` : ""}`;
+  });
+  const text = `Tessera 아이콘 시안 선택 결과\n${lines.join("\n")}`;
+  let ok = false;
+  try { await navigator.clipboard.writeText(text); ok = true; } catch {}
+  if (!ok) { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); try { ok = document.execCommand("copy"); } catch {} ta.remove(); }
+  const b = document.getElementById("copyRes"); b.textContent = ok ? "복사됨" : "복사 실패"; b.classList.toggle("ok", ok);
+  setTimeout(() => { b.textContent = "결과 복사"; b.classList.remove("ok"); }, 1500);
+};
+
+// Shift: dotted outlines; hovering a candidate area opens its picker at the mouse.
+const pop = document.getElementById("pop");
+let shift = false, hideT, lastX = 0, lastY = 0;
+function fillPop(k) { const d = DECISIONS.find((x) => x.key === k); pop.dataset.k = k; pop.innerHTML = `<b>${d.label}</b>${optRows(d)}`; }
+function openPopAt(k, x, y) {
+  fillPop(k); pop.classList.add("on");
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  pop.style.left = Math.min(Math.max(8, x - 12), innerWidth - w - 8) + "px";
+  pop.style.top = Math.min(Math.max(8, y - 12), innerHeight - h - 8) + "px";
+}
+const hide = () => pop.classList.remove("on");
+document.addEventListener("mousemove", (e) => {
+  lastX = e.clientX; lastY = e.clientY;
+  if (e.target.closest("#pop")) { clearTimeout(hideT); return; }
+  const el = e.target.closest(".stage [data-cand]");
+  if (pop.classList.contains("on")) { if (el && el.dataset.cand === pop.dataset.k) { clearTimeout(hideT); return; } clearTimeout(hideT); hideT = setTimeout(hide, 350); }
+  if ((shift || e.shiftKey) && el && !pop.classList.contains("on")) openPopAt(el.dataset.cand, e.clientX, e.clientY);
+});
+pop.addEventListener("mouseleave", () => { clearTimeout(hideT); hideT = setTimeout(hide, 350); });
+addEventListener("keydown", (e) => {
+  if (e.key === "Escape") hide();
+  if (e.key !== "Shift") return;
+  shift = true; document.body.classList.add("hit");
+  const el = document.elementFromPoint(lastX, lastY)?.closest(".stage [data-cand]");
+  if (el && !pop.classList.contains("on")) openPopAt(el.dataset.cand, lastX, lastY);
+});
+addEventListener("keyup", (e) => { if (e.key === "Shift") { shift = false; document.body.classList.remove("hit"); } });
+addEventListener("blur", () => { shift = false; document.body.classList.remove("hit"); });
+document.addEventListener("mousedown", (e) => { if (!e.target.closest("#pop")) hide(); });
+paint();
+</script>
+</body>
+</html>
