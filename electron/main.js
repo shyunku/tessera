@@ -1,6 +1,8 @@
-import { app, BrowserWindow, ipcMain, session, shell } from "electron";
+import { app, BrowserWindow, clipboard, ipcMain, session, shell } from "electron";
 import { pathToFileURL } from "node:url";
-import { configureUserData, isDev, preloadPath, rendererIndex } from "./paths.js";
+import { configureUserData, dataDir, isDev, preloadPath, rendererIndex } from "./paths.js";
+import { Service } from "./service.js";
+import { registerIpc } from "./ipc.js";
 
 configureUserData();
 
@@ -8,22 +10,26 @@ const devServerUrl = process.env.VITE_DEV_SERVER_URL;
 const pageUrl = isDev && devServerUrl ? devServerUrl : pathToFileURL(rendererIndex).href;
 
 let mainWindow = null;
+let service = null;
 
 function isAppUrl(url) {
   if (!url) return false;
-  if (pageUrl.startsWith("file:")) return url.startsWith(pageUrl.split("#")[0].split("?")[0]);
-  return new URL(url).origin === new URL(pageUrl).origin;
+  if (pageUrl.startsWith("file:")) return url.split("#")[0].split("?")[0] === pageUrl;
+  try {
+    return new URL(url).origin === new URL(pageUrl).origin;
+  } catch {
+    return false;
+  }
 }
 
-// Every IPC call must come from our own page in the main frame.
-export function handle(channel, fn) {
-  ipcMain.handle(channel, async (event, payload) => {
-    const frame = event.senderFrame;
-    if (!frame || frame !== event.sender.mainFrame || !isAppUrl(frame.url)) {
-      throw new Error("Rejected IPC from an unknown frame");
-    }
-    return fn(payload, event);
-  });
+// IPC must come from our own page, in the main frame of our window.
+function isTrustedSender(event) {
+  const frame = event.senderFrame;
+  return !!frame && !!mainWindow && event.sender === mainWindow.webContents && frame === event.sender.mainFrame && isAppUrl(frame.url);
+}
+
+function emit(event, payload) {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(event, payload);
 }
 
 function createWindow() {
@@ -70,6 +76,26 @@ function harden() {
   });
 }
 
+function registerAppIpc() {
+  const guard = (fn) => (event, payload) => {
+    if (!isTrustedSender(event)) return { ok: false, error: { code: "forbidden", message: "Rejected" } };
+    return fn(payload);
+  };
+  ipcMain.handle("app:info", guard(() => ({ name: app.getName(), version: app.getVersion(), electron: process.versions.electron })));
+  // The page tells us its chrome colours and bar height so the native window buttons match.
+  ipcMain.handle(
+    "app:titleBar",
+    guard((p) => {
+      if (!mainWindow) return { ok: true, data: null };
+      const hex = (c) => (typeof c === "string" && /^#[0-9a-fA-F]{6}$/.test(c) ? c : undefined);
+      const height = [32, 48].includes(p?.height) ? p.height : 48;
+      mainWindow.setTitleBarOverlay({ color: hex(p?.color), symbolColor: hex(p?.symbolColor), height });
+      if (hex(p?.color)) mainWindow.setBackgroundColor(p.color);
+      return { ok: true, data: null };
+    })
+  );
+}
+
 if (!app.requestSingleInstanceLock()) {
   app.quit();
 } else {
@@ -79,16 +105,14 @@ if (!app.requestSingleInstanceLock()) {
     mainWindow.focus();
   });
 
-  handle("app:info", () => ({
-    name: app.getName(),
-    version: app.getVersion(),
-    electron: process.versions.electron,
-  }));
-
   app.whenReady().then(() => {
     harden();
+    service = new Service({ dataDir: dataDir(), clipboard, emit });
+    registerIpc(service, isTrustedSender);
+    registerAppIpc();
     createWindow();
   });
 
+  app.on("before-quit", () => service?.dispose());
   app.on("window-all-closed", () => app.quit());
 }

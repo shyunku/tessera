@@ -11,9 +11,10 @@
     "dev": "node scripts/dev.mjs",
     "build": "vite build",
     "start": "node scripts/start.mjs",
-    "test": "node --test --test-reporter=spec test/",
+    "test": "node --test --test-reporter=spec \"test/**/*.test.js\"",
     "pack:win": "vite build && electron-builder --win --x64",
-    "postinstall": "node node_modules/electron/install.js"
+    "postinstall": "node node_modules/electron/install.js",
+    "test:electron": "node scripts/test-electron.mjs"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "6.1.2",

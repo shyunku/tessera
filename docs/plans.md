@@ -10,13 +10,17 @@
 6. 기능 추가: 계정 관리, 보안 편의, 정리 기능, 백업/복원 (#8 ~ #11)
 7. 패키징과 통합 검증 (#12, #13)
 
-## v2 암호화 설계 초안
+## v2 암호화 설계 (구현: `electron/crypto/vault-crypto.js`)
 
-- KDF: scrypt (N=2^17, r=8, p=1, 128MiB). Electron 45(Node 24.22)는 BoringSSL을 써서 `crypto.argon2`가 'Argon2 algorithm not supported'로 실패하므로 Argon2id는 쓰지 않는다(2026-11-04 확인). scrypt는 Node 내장이라 의존성이 없다. 파라미터는 KDF 이름과 함께 저장해서 나중에 올릴 수 있게 한다.
-- KEK = KDF(password, salt 16B). DEK = 랜덤 32B.
-- wrapped_dek = AES-256-GCM(KEK, iv 12B, DEK, aad = `keyhub:v2:dek:<account_uuid>`).
-- 필드 암호화: AES-256-GCM(DEK, 랜덤 iv 12B, plaintext, aad = `<table>:<column>:<row uuid>`). 행 사이에서 암호문을 바꿔치기하지 못하게 한다.
-- 세션 동안 DEK는 메인 프로세스 메모리에만 둔다. 잠금·로그아웃 시 버퍼를 0으로 덮어쓴다.
+- KDF: scrypt (N=2^17, r=8, p=1, 128MiB, Electron에서 약 0.6초). Electron 45(Node 24.22)는 BoringSSL이라 `crypto.argon2`가 'Argon2 algorithm not supported'로 실패해서 Argon2id는 쓰지 않는다(2026-11-04 확인). 파라미터는 키링에 같이 저장하고, 읽을 때 메모리 512MiB·작업량 상한으로 검사한다(조작된 파일이 Electron 프로세스를 죽이지 못하게).
+- KEK = scrypt(password NFC, salt 16B). DEK = 랜덤 32B(`Buffer.alloc`, 공유 풀 밖). wrapped_dek = AES-256-GCM(KEK, DEK, AAD `tessera:dek`).
+- 봉인 형식: `[형식 1B][IV 12B][태그 16B][암호문]`. 형식 바이트도 AAD에 포함한다.
+- 필드 AAD: `tessera:<table>:<column>:<rowId>`. 키 이름·값의 rowId는 `itemId/fieldId`라서 다른 항목으로 옮겨 붙이면 감지된다. table/column/rowId 형식을 검사한다.
+- 오답 비밀번호(GCM 태그 실패)와 손상·알 수 없는 형식(`CorruptDataError`)을 구분한다. 손상을 오답으로 알려 사용자가 초기화하는 일을 막는다.
+- 비밀번호 변경 시 DEK를 새로 만들고 모든 이름·값을 다시 암호화한다. 예전 파일 사본 + 예전 비밀번호로 이후 데이터를 열 수 없다(이미 만든 백업은 예전 비밀번호로 열린다).
+- 평문으로 남는 것: 폴더 구조·순서, 즐겨찾기, 조회수, 시각, 항목별 키 개수. 폴더·항목의 위치 관계는 인증하지 않는다(오프라인으로 파일을 고치면 구조를 바꿀 수 있음, 내용은 못 읽음).
+- 버퍼 지우기는 최선 노력이다. JS 문자열(비밀번호, 화면에 보인 값)과 라이브러리 내부 사본은 지울 수 없다.
+- 2026-11-04 적대적 리뷰 반영: KDF 곱 상한, 손상/오답 구분, 중간 평문 버퍼 제거, sealString 타입 검사, AAD 입력 검사, Uint8Array 일관 처리, 깨진 유니코드 비밀번호 거부, DEK 교체, 필드-항목 바인딩, 형식 바이트 인증, Electron 런타임 테스트(`npm run test:electron`).
 
 ## 마이그레이션 설계 초안
 
@@ -34,4 +38,4 @@
 
 ## 미결정 사항
 
-- 없음. 세부 파라미터는 #4에서 측정 후 확정한다.
+- 없음.
