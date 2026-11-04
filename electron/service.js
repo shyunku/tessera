@@ -46,6 +46,8 @@ export class Service {
     this.kdf = kdf;
     this.legacyDir = legacyDir;
     this.vault = new Vault(path.join(dataDir, "tessera.db"), kdf ? { kdf } : undefined);
+    // Written once data exists (imported or new). After a reset the old data is not offered again.
+    this.legacyDoneFile = path.join(dataDir, "legacy-handled");
     this.clipboard = clipboard;
     this.emit = emit || (() => {});
     this.fails = 0;
@@ -55,7 +57,7 @@ export class Service {
 
   // Old Keyhub data is offered only while there is no Tessera data yet.
   legacyInfo() {
-    if (this.vault.state !== "empty") return null;
+    if (this.vault.state !== "empty" || fs.existsSync(this.legacyDoneFile)) return null;
     const l = detectLegacy(this.legacyDir);
     return l ? { account: l.account } : null;
   }
@@ -72,7 +74,16 @@ export class Service {
       onProgress: (p) => this.emit("legacy:progress", p),
     });
     await this.vault.unlock(password);
+    this._markLegacyHandled();
     return { report, status: this.status() };
+  }
+
+  _markLegacyHandled() {
+    try {
+      fs.writeFileSync(this.legacyDoneFile, new Date().toISOString());
+    } catch {
+      // not fatal: the import offer may reappear after a reset
+    }
   }
 
   // ---------- session ----------
@@ -94,6 +105,7 @@ export class Service {
   async create(password) {
     checkNewPassword(password);
     await this.vault.create(password);
+    this._markLegacyHandled();
     return this.status();
   }
 

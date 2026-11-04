@@ -161,5 +161,8 @@ test("service: legacy is offered while empty, migration unlocks, then it is gone
   assert.equal(status.state, "unlocked");
   assert.equal(status.legacy, null);
   assert.equal(status.createdAt, 1621468800000, "created date comes from the oldest v1 item");
+  await s.reset(REAL.password, "초기화");
+  assert.equal(s.status().state, "empty");
+  assert.equal(s.status().legacy, null, "after a reset the old data is not offered again");
   s.dispose();
 });
