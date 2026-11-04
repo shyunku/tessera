@@ -27,3 +27,6 @@ yarn-error.log*
 # local scratch
 .local/
 **/.local/
+
+# dev app data
+/.devdata
