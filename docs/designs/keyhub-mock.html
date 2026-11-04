@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Keyhub 시안</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== Tokens (framed-sheet) ===== */
+:root{
+  --font:"IBM Plex Sans KR","IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+  --radius-control:6px; --radius-sheet:16px; --sheet-inset:8px;
+  --sidebar-width:228px; --gap:24px; --pad:24px; --control-height:32px;
+  --fs-title:22px;
+}
+.win{
+  --ground:#f4f6f8; --surface:#ffffff; --raised:#f4f6f8; --active:#e6e9ec; --panel:#fafafa;
+  --border:#e5e8eb; --rule:#eef0f2; --control:#cdced1;
+  --text:#131416; --muted:#5d5f60; --faint:#6b6d70;
+  --accent:#1b6c80; --accent-ink:#ffffff;
+  --digit:#2f70bb; --symbol:#a86f0c;
+  --positive:#1e7b4f; --negative:#c4242a;
+  --pill-warning-bg:#fffbeb; --pill-warning-ink:#92400e; --pill-warning-line:#fde68a;
+  --scrim:rgba(19,20,22,.32); --float-shadow:0 12px 32px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.08);
+  --tint-a:#e3eef6; --tint-b:#f3e9dc; --tint-c:#e6f1e8;
+  --guide:#dfe3e6;
+}
+.win[data-accent="old"]{--accent:#10489b}
+.win[data-accent="ink"]{--accent:#1d1f20}
+.win[data-theme="dark"]{
+  --ground:#0c0d0e; --surface:#141516; --raised:#1c1d1f; --active:#26282a; --panel:#1a1b1d;
+  --border:#2a2c2e; --rule:#212325; --control:#45474a;
+  --text:#f4f5f6; --muted:#b4b6b8; --faint:#949699;
+  --accent:#3f9fb5; --accent-ink:#ffffff;
+  --digit:#7fb0f0; --symbol:#e0a94a;
+  --positive:#3fc07a; --negative:#ef6b72;
+  --pill-warning-bg:#2b2213; --pill-warning-ink:#f0b860; --pill-warning-line:#5a4520;
+  --scrim:rgba(0,0,0,.55); --float-shadow:0 12px 32px rgba(0,0,0,.6);
+  --tint-a:#1d2a33; --tint-b:#30281d; --tint-c:#1d2b22;
+  --guide:#2c2f31;
+}
+.win[data-theme="dark"][data-accent="old"]{--accent:#3d74c9}
+.win[data-theme="dark"][data-accent="ink"]{--accent:#e8e9ea;--accent-ink:#131416}
+.win{--accent-soft:color-mix(in srgb,var(--accent) 12%,var(--surface));--accent-line:color-mix(in srgb,var(--accent) 35%,var(--surface))}
+
+/* ===== Page around the window (mock only) ===== */
+*{box-sizing:border-box}
+html,body{margin:0;background:#d9dcdf;font-family:var(--font);color:#131416}
+body{min-height:100vh;padding:32px;display:flex;gap:32px;align-items:flex-start;justify-content:center}
+.notes{width:320px;flex:none;background:#fff;border-radius:12px;font-size:14px;line-height:1.5;position:sticky;top:32px;height:calc(100vh - 64px);min-height:320px;display:flex;flex-direction:column;overflow:hidden}
+.notes .nh{padding:20px 20px 10px;border-bottom:1px solid #eceef0}
+.notes .nh-row{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.notes .nb{flex:1;overflow:auto;padding:0 20px 16px}
+.copybtn{height:32px;padding:0 12px;border-radius:6px;border:0;background:#131416;color:#fff;font:inherit;font-weight:500;cursor:pointer;white-space:nowrap}
+.copybtn:hover{background:#2a2c2e}
+.copybtn.ok{background:#1e7b4f}
+.notes h2{font-size:16px;margin:0 0 4px;font-weight:600}
+.notes .lead{color:#5d5f60;font-size:13px;margin:0 0 8px}
+.dec{padding:12px 0;border-top:1px solid #eceef0}
+.nb .dec:first-child{border-top:0}
+.dec>b{display:block;font-weight:600;margin-bottom:6px}
+.opt{display:flex;align-items:flex-start;gap:8px;width:100%;border:0;background:transparent;font:inherit;color:#131416;text-align:left;padding:6px 8px;border-radius:8px;cursor:pointer}
+.opt:hover{background:#f2f4f5}
+.opt.on{background:#e3eff2;box-shadow:inset 3px 0 0 #1b6c80}
+.opt.on .ol .nm{font-weight:500}
+.opt .no{font-size:12px;color:#6b6d70;width:44px;flex:none;line-height:20px}
+.opt .ol{flex:1;min-width:0}
+.opt .ol>span:not(.nm){display:block;font-size:12px;color:#5d5f60;line-height:17px;margin-top:2px}
+.opt .nm{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.badge{font-style:normal;display:inline-flex;align-items:center;height:20px;padding:0 7px;border-radius:10px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge.old{background:#ebedee;color:#353736}
+.badge.rec{background:#d8eef3;color:#0f4b5a}
+.badge.cur{background:#131416;color:#fff}
+.notes label{display:flex;gap:8px;align-items:center;margin-top:8px;padding-top:12px;border-top:1px solid #eceef0;color:#5d5f60;cursor:pointer}
+
+/* ===== Window ===== */
+.win{width:1100px;height:720px;flex:none;position:relative;overflow:hidden;border-radius:8px;
+  background:var(--ground);color:var(--text);font-family:var(--font);font-size:14px;line-height:20px;
+  box-shadow:0 20px 60px rgba(0,0,0,.25),0 0 0 1px rgba(0,0,0,.08)}
+.win button{font:inherit;color:inherit}
+.num{font-variant-numeric:tabular-nums}
+.screen{position:absolute;inset:0;display:none}
+.screen.on{display:block}
+.wc{position:absolute;top:0;right:0;display:flex;z-index:5}
+.wc i{width:46px;height:32px;display:grid;place-items:center;color:var(--muted)}
+.wc i:hover{background:var(--active)}
+.wc i.x:hover{background:#c42b1c;color:#fff}
+.top .wc{align-self:stretch;height:48px}
+.top .wc i{height:48px}
+svg.ic{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* controls */
+.btn{height:var(--control-height);padding:0 12px;border-radius:var(--radius-control);border:1px solid var(--control);background:var(--surface);
+  display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap;font-weight:500}
+.btn:hover{background:var(--raised)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.danger{color:var(--negative);border-color:color-mix(in srgb,var(--negative) 45%,var(--control))}
+.btn.danger.fill{background:var(--negative);border-color:var(--negative);color:#fff}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.ghost:hover{background:var(--active)}
+.btn.icon{width:32px;padding:0;justify-content:center}
+.btn.block{width:100%;justify-content:center;height:40px}
+.btn:disabled{opacity:.5;cursor:default;filter:none}
+.field{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.field>span{font-size:14px;font-weight:500}
+.field small{color:var(--muted);font-size:12px;line-height:16px}
+.input{height:40px;border:1px solid var(--border);border-radius:var(--radius-control);background:var(--surface);color:var(--text);padding:0 12px;font:inherit;outline:none;width:100%}
+.win[data-theme="dark"] .input{background:#101112}
+.input:focus{border-color:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent)}
+.input.mono{font-family:var(--mono)}
+.input::placeholder{color:var(--faint)}
+.err{color:var(--negative);font-size:13px;margin:-8px 0 12px;display:none}
+.err.on{display:block}
+.seg{display:inline-flex;background:var(--raised);border-radius:8px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;height:28px;padding:0 12px;border-radius:6px;cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--text);font-weight:500;box-shadow:0 0 0 1px var(--border)}
+.toggle{width:30px;height:18px;border-radius:9px;background:var(--control);position:relative;cursor:pointer;flex:none;border:0}
+.toggle::after{content:"";position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:left .15s}
+.toggle.on{background:var(--accent)}
+.toggle.on::after{left:14px}
+.win[data-accent="ink"][data-theme="dark"] .toggle.on::after{background:#131416}
+.notice{background:var(--pill-warning-bg);border:1px solid var(--pill-warning-line);color:var(--pill-warning-ink);border-radius:8px;padding:10px 12px;font-size:13px;line-height:19px;margin-bottom:16px}
+
+/* ===== Unlock / first run ===== */
+.center{position:absolute;inset:32px 0 0;display:grid;place-items:center}
+.col{width:380px}
+.brand{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.brand b{font-size:18px;font-weight:600}
+.mark{width:28px;height:28px;flex:none}
+.col h1{font-size:var(--fs-title);font-weight:600;margin:0 0 4px;line-height:28px}
+.col .sub{color:var(--muted);margin:0 0 24px;line-height:20px}
+.hint{margin-top:14px;font-size:13px;color:var(--muted);text-align:center}
+.hint a{color:var(--text);text-decoration:underline;cursor:pointer}
+.steps{list-style:none;margin:0 0 20px;padding:0}
+.steps li{display:flex;align-items:center;gap:12px;height:40px;color:var(--muted)}
+.steps li .dot{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--control);display:grid;place-items:center;flex:none;color:transparent}
+.steps li.done{color:var(--text)}
+.steps li.done .dot{background:var(--positive);border-color:var(--positive);color:#fff}
+.steps li.now{color:var(--text);font-weight:500}
+.steps li.now .dot{border-color:var(--accent)}
+.steps li .cnt{margin-left:auto;font-size:12px;color:var(--muted);font-weight:400}
+.bar{height:8px;border-radius:4px;background:var(--raised);overflow:hidden;margin-bottom:8px}
+.bar i{display:block;height:100%;background:var(--accent);width:0;transition:width .2s linear}
+.bar-cap{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:20px}
+
+/* ===== Vault shell ===== */
+.shell{position:absolute;inset:0;display:grid;grid-template-columns:var(--sidebar-width) 1fr;grid-template-rows:48px 1fr}
+.top{grid-column:1/-1;display:flex;align-items:center;position:relative;padding-right:140px}
+.top .brand{margin:0;padding-left:16px;width:var(--sidebar-width);gap:8px;align-self:stretch;align-items:center}
+.top .brand b{font-size:15px}
+.search{flex:1;max-width:460px;margin:0 auto;height:32px;border-radius:8px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--muted)}
+.search input{border:0;outline:0;background:transparent;flex:1;font:inherit;color:var(--text);min-width:0}
+.search input::placeholder{color:var(--faint)}
+.search kbd{font-family:var(--font);font-size:12px;color:var(--muted);border:1px solid var(--border);border-radius:4px;padding:0 5px;line-height:18px}
+.lockinfo{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-right:8px}
+.side{display:flex;flex-direction:column;padding:4px 10px 12px;overflow:auto;min-height:0}
+.nav{display:flex;align-items:center;gap:10px;height:32px;padding:0 8px;border-radius:8px;color:var(--muted);cursor:pointer;margin-bottom:2px;position:relative}
+.nav:hover{color:var(--text);background:color-mix(in srgb,var(--active) 60%,transparent)}
+.nav.on{background:var(--accent-soft);color:var(--accent);font-weight:500}
+.win[data-accent="ink"] .nav.on{background:var(--active);color:var(--text)}
+.nav .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nav .c{font-size:12px;color:var(--muted);font-weight:400}
+.nav .more{display:none;width:22px;height:22px;border-radius:4px;place-items:center;color:var(--muted)}
+.nav:hover .more{display:grid}
+.nav:hover .c{display:none}
+.nav .more:hover{background:var(--surface)}
+.grp{font-size:12px;color:var(--muted);margin:20px 8px 6px;display:flex;justify-content:space-between;align-items:center}
+.grp button{border:0;background:none;color:var(--muted);cursor:pointer;display:grid;place-items:center;width:22px;height:22px;border-radius:4px}
+.grp button:hover{background:var(--active);color:var(--text)}
+.side .spacer{flex:1}
+
+/* folder tree with guide lines (nav option 1) */
+.tree .tn{display:flex;align-items:center;height:30px;border-radius:6px;cursor:pointer;color:var(--muted);position:relative;padding-right:6px}
+.tree .tn:hover{background:color-mix(in srgb,var(--active) 60%,transparent);color:var(--text)}
+.tree .tn.on{background:var(--accent-soft);color:var(--accent);font-weight:500}
+.win[data-accent="ink"] .tree .tn.on{background:var(--active);color:var(--text)}
+.tree .tn.anc{color:var(--text)}
+.win .drop-ok{background:var(--accent-soft)!important;box-shadow:inset 0 0 0 2px var(--accent)!important;color:var(--accent)!important}
+.win .drop-no{cursor:not-allowed;opacity:.6}
+.win .dragging-src{opacity:.45}
+.tree{position:relative}
+.insline{position:absolute;height:2px;background:var(--accent);border-radius:1px;pointer-events:none;z-index:3;display:none}
+.insline::before{content:"";position:absolute;left:-6px;top:-3px;width:8px;height:8px;border-radius:50%;border:2px solid var(--accent);background:var(--surface);box-sizing:border-box}
+.rootzone{display:none;align-items:center;gap:8px;height:34px;margin:0 0 6px;padding:0 10px;border:1px dashed var(--control);border-radius:8px;color:var(--muted);font-size:13px}
+.win.dragging .tree{position:relative}
+.insline{position:absolute;height:2px;background:var(--accent);border-radius:1px;pointer-events:none;z-index:3;display:none}
+.insline::before{content:"";position:absolute;left:-6px;top:-3px;width:8px;height:8px;border-radius:50%;border:2px solid var(--accent);background:var(--surface);box-sizing:border-box}
+.rootzone{display:flex}
+.note{position:absolute;left:50%;bottom:20px;transform:translateX(-50%) translateY(12px);opacity:0;pointer-events:none;background:#1d1f20;color:#fff;border-radius:10px;box-shadow:var(--float-shadow);padding:10px 14px;display:flex;gap:14px;align-items:center;transition:.18s;z-index:16;white-space:nowrap}
+.note.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
+.note button{border:0;background:transparent;color:#8fd0de;cursor:pointer;font-weight:500}
+.win[data-theme="dark"] .note{background:#f4f5f6;color:#131416}
+.win[data-theme="dark"] .note button{color:#1b6c80}
+.tree .ind{display:flex;align-self:stretch;flex:none}
+.tree .ind i{width:16px;position:relative;flex:none}
+.tree .ind i.l::before{content:"";position:absolute;left:7px;top:0;bottom:0;border-left:1px solid var(--guide)}
+.tree .ind i.l.on::before{border-color:var(--accent-line)}
+.tree .tw{width:18px;height:18px;display:grid;place-items:center;flex:none;border-radius:4px;color:var(--muted)}
+.tree .tw:hover{background:var(--surface)}
+.tree .tw svg{width:12px;height:12px;transition:transform .15s}
+.tree .tw.open svg{transform:rotate(90deg)}
+.tree .fi{margin:0 8px 0 2px;display:grid;place-items:center}
+.tree .lbl{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tree .c{font-size:12px;color:var(--muted);font-weight:400}
+.tree .more{display:none;width:22px;height:22px;border-radius:4px;place-items:center;color:var(--muted)}
+.tree .tn:hover .more{display:grid}
+.tree .tn:hover .c{display:none}
+
+.sheet{grid-column:2;grid-row:2;margin:0 var(--sheet-inset) var(--sheet-inset) 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sheet);overflow:hidden;position:relative;display:flex;min-height:0}
+.listpane{width:320px;flex:none;border-right:1px solid var(--rule);display:flex;flex-direction:column;min-height:0}
+.lp-head{padding:20px 20px 12px}
+.lp-head .row{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.lp-head h1{font-size:var(--fs-title);font-weight:600;margin:0;line-height:28px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lp-head p{margin:2px 0 0;color:var(--muted);font-size:13px}
+.crumbs{display:flex;align-items:center;gap:2px;font-size:12px;color:var(--muted);margin-bottom:6px;flex-wrap:wrap}
+.crumbs:empty{display:none}
+.crumbs a{cursor:pointer;padding:2px 4px;border-radius:4px;display:inline-flex;align-items:center;gap:2px}
+.crumbs a:hover{color:var(--text);background:var(--raised)}
+.crumbs .sep{color:var(--faint)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.chips:empty{display:none}
+.chip{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border-radius:14px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px}
+.chip:hover{border-color:var(--accent-line);background:var(--accent-soft)}
+.chip .c{font-size:12px;color:var(--muted)}
+.rows{flex:1;overflow:auto;padding:0 10px 12px}
+.it{display:flex;align-items:center;gap:12px;min-height:56px;padding:8px 10px;border-radius:8px;cursor:pointer;position:relative}
+.it:hover{background:var(--raised)}
+.it.sel{background:var(--accent-soft)}
+.it.sel .t b{color:var(--accent)}
+.win[data-accent="ink"] .it.sel{background:var(--active)}
+.win[data-accent="ink"] .it.sel .t b{color:var(--text)}
+.it .glyph{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;font-weight:600;font-size:13px;flex:none}
+.it .t{flex:1;min-width:0}
+.it .t b{display:block;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.it .t span{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:block}
+.it .star{color:var(--accent);display:grid}
+.it.folder .glyph{background:transparent;color:var(--muted)}
+/* combined tree in list pane (nav option 3) */
+.it.tr{min-height:40px;padding:4px 10px 4px 0;gap:0}
+.it.tr .ind{display:flex;align-self:stretch;flex:none}
+.it.tr .ind i{width:16px;position:relative;flex:none}
+.it.tr .ind i.l::before{content:"";position:absolute;left:11px;top:-4px;bottom:-4px;border-left:1px solid var(--guide)}
+.it.tr .tw{width:22px;display:grid;place-items:center;flex:none;color:var(--muted)}
+.it.tr .tw svg{width:12px;height:12px;transition:transform .15s}
+.it.tr .tw.open svg{transform:rotate(90deg)}
+.it.tr .glyph{width:26px;height:26px;font-size:12px;border-radius:6px;margin-right:10px}
+.it.tr.folder .glyph{width:20px;margin-right:8px}
+.it.tr .t b{font-weight:500}
+.it.tr.folder .t b{font-weight:600}
+.empty{margin:4px 10px;border:1px dashed var(--control);border-radius:8px;padding:14px;color:var(--muted);font-size:13px;line-height:19px}
+.empty a{color:var(--text);text-decoration:underline;cursor:pointer}
+
+.detail{flex:1;min-width:0;overflow:auto;padding:20px var(--pad) var(--pad);position:relative}
+.d-head{display:flex;align-items:flex-start;gap:12px}
+.d-head .glyph{width:44px;height:44px;border-radius:10px;display:grid;place-items:center;font-weight:600;font-size:17px;flex:none}
+.d-head .tt{flex:1;min-width:0}
+.d-head h2{font-size:20px;font-weight:600;margin:0;line-height:26px}
+.d-head p{margin:2px 0 0;font-size:13px;color:var(--muted)}
+.d-actions{display:flex;gap:6px;position:relative}
+.favbtn.on{color:var(--accent)}
+.favbtn.on svg{fill:currentColor}
+.fields{margin-top:20px;border-top:1px solid var(--rule)}
+.f{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--rule);min-height:64px}
+.f .fk{flex:1;min-width:0}
+.f .fk small{display:block;font-size:12px;color:var(--muted);line-height:16px;margin-bottom:4px}
+.f .fv{font-family:var(--mono);font-size:15px;line-height:22px;word-break:break-all;letter-spacing:.01em}
+.f .fv .d{color:var(--digit)}
+.f .fv .s{color:var(--symbol)}
+.f .fv.masked{color:var(--muted);letter-spacing:.12em}
+.f .fa{display:flex;gap:4px}
+.addf{display:flex;align-items:center;gap:8px;height:48px;color:var(--muted);cursor:pointer;border-bottom:1px solid var(--rule)}
+.addf:hover{color:var(--text)}
+.meta{margin-top:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);font-size:12px;color:var(--muted)}
+.meta b{display:block;color:var(--text);font-weight:400;font-size:14px;margin-top:2px}
+.nosel{height:100%;display:grid;place-items:center;color:var(--muted);text-align:center;font-size:13px}
+.nosel b{display:block;color:var(--text);font-size:15px;font-weight:500;margin-bottom:4px}
+
+.menu{position:absolute;right:0;top:36px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:var(--float-shadow);padding:4px;min-width:150px;z-index:20;display:none}
+.menu.on{display:block}
+.menu button{display:flex;width:100%;align-items:center;gap:8px;height:32px;border:0;background:none;border-radius:6px;padding:0 10px;cursor:pointer;text-align:left}
+.menu button:hover{background:var(--raised)}
+.menu button.neg{color:var(--negative)}
+
+/* clipboard countdown (floats) */
+.toast{position:absolute;left:50%;bottom:20px;transform:translateX(-50%) translateY(12px);opacity:0;pointer-events:none;
+  background:#1d1f20;color:#fff;border-radius:10px;box-shadow:var(--float-shadow);width:420px;padding:12px 14px 14px;transition:.18s;z-index:15}
+.win[data-theme="dark"] .toast{background:#f4f5f6;color:#131416}
+.toast.on{opacity:1;transform:translateX(-50%);pointer-events:auto}
+.toast .tr{display:flex;align-items:center;gap:10px}
+.toast .tr span{flex:1}
+.toast .tr button{border:0;background:transparent;color:inherit;text-decoration:underline;cursor:pointer;opacity:.85}
+.toast .tb{height:3px;border-radius:2px;background:color-mix(in srgb,currentColor 22%,transparent);margin-top:10px;overflow:hidden}
+.toast .tb i{display:block;height:100%;background:currentColor;width:100%}
+
+/* settings */
+.settings{flex:1;overflow:auto;padding:24px 32px 40px}
+.settings h1{font-size:var(--fs-title);font-weight:600;margin:0 0 4px;line-height:28px}
+.settings>p{margin:0 0 8px;color:var(--muted)}
+.sec{display:grid;grid-template-columns:220px 1fr;gap:var(--gap);padding:28px 0;border-bottom:1px solid var(--rule)}
+.sec:last-child{border:0}
+.sec .sl b{display:block;font-size:16px;font-weight:500;line-height:22px;margin-top:8px}
+.sec .sl span{display:block;font-size:13px;color:var(--muted);margin-top:4px;line-height:19px}
+.panel{background:var(--panel);border-radius:16px;padding:6px 16px}
+.sw{display:flex;align-items:center;gap:16px;min-height:60px;padding:10px 0;border-bottom:1px solid var(--rule)}
+.sw:last-child{border:0}
+.sw .st{flex:1}
+.sw .st b{display:block;font-weight:500}
+.sw .st span{display:block;font-size:13px;color:var(--muted);line-height:18px;margin-top:2px}
+.sec.dangerz .sl b{color:var(--negative)}
+
+/* modal */
+.scrim{position:absolute;inset:0;background:var(--scrim);display:none;place-items:center;z-index:30}
+.scrim.on{display:grid}
+.dlg{width:460px;max-height:640px;overflow:auto;background:var(--surface);border-radius:12px;box-shadow:var(--float-shadow);padding:24px}
+.dlg.wide{width:560px}
+.dlg h3{margin:0 0 4px;font-size:18px;font-weight:600;line-height:24px}
+.dlg>p{margin:0 0 20px;color:var(--muted);line-height:20px}
+.dlg .acts{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+.kv{display:grid;grid-template-columns:150px 1fr 32px;gap:8px;margin-bottom:8px;align-items:center}
+.kvh{display:grid;grid-template-columns:150px 1fr 32px;gap:8px;font-size:12px;color:var(--muted);margin-bottom:6px}
+.picker{border:1px solid var(--border);border-radius:8px;padding:6px;margin-bottom:16px;max-height:260px;overflow:auto}
+.pk{display:flex;align-items:center;gap:8px;height:34px;padding:0 8px;border-radius:6px;cursor:pointer}
+.pk:hover{background:var(--raised)}
+.pk.on{background:var(--accent-soft);color:var(--accent);font-weight:500}
+.pk.dis{color:var(--faint);cursor:not-allowed}
+.pk.dis:hover{background:transparent}
+.pk small{margin-left:auto;font-size:12px;color:var(--faint);font-weight:400}
+.radio{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;cursor:pointer}
+.radio.on{border-color:var(--accent);background:var(--accent-soft)}
+.radio i{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--control);flex:none;margin-top:2px}
+.radio.on i{border:5px solid var(--accent)}
+.radio b{display:block;font-weight:500}
+.radio span{display:block;font-size:13px;color:var(--muted);line-height:18px}
+
+/* ===== Mock tools ===== */
+body.hit .win [data-click],body.hit .win button,body.hit .win .input,body.hit .win input,body.hit .win .nav,body.hit .win .tn,body.hit .win .it,body.hit .win .pk,body.hit .win .radio,body.hit .win .addf,body.hit .win .crumbs a,body.hit .win .chip,body.hit .win .tw{outline:1.5px dashed #e0457b!important;outline-offset:1px}
+body.hit .win [data-cand]{outline:2px dashed #1b6c80!important;outline-offset:3px}
+body.changed .win [data-new]{box-shadow:0 0 0 2px #e0a100 inset!important}
+.cand-pop{position:fixed;z-index:1000;background:#fff;color:#131416;border-radius:10px;padding:8px;font-family:var(--font);font-size:13px;box-shadow:0 10px 30px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06);display:none;width:300px}
+.cand-pop.on{display:block}
+.cand-pop>b{display:block;font-weight:600;margin:2px 6px 6px}
+</style>
+</head>
+<body>
+
+<div class="win" id="win" data-theme="light" data-accent="new" data-nav="tree" data-import="both" data-dnd="undo">
+
+  <!-- ============ FIRST RUN: import v1 ============ -->
+  <section class="screen on" id="s-import">
+    <div class="wc"><i>__MIN__</i><i>__MAX__</i><i class="x">__X__</i></div>
+    <div class="center">
+      <div class="col" id="impForm" data-new>
+        <div class="brand">__MARK__<b>Keyhub</b></div>
+        <h1>이전 버전 데이터 가져오기</h1>
+        <p class="sub">Keyhub 0.5에서 쓰던 <b>shyunku</b> 계정을 새 형식으로 옮깁니다. 비밀번호는 그대로 쓰며, 나중에 설정에서 바꿀 수 있습니다.</p>
+        <label class="field"><span>shyunku 계정 비밀번호</span><input class="input" type="password" id="pwImp" placeholder="이전 버전에서 쓰던 비밀번호"></label>
+        <div class="err" id="impErr">비밀번호가 맞지 않습니다.</div>
+        <button class="btn primary block" id="impBtn">가져오기</button>
+        <div class="hint">원본 파일은 지우지 않고 그대로 둡니다.</div>
+      </div>
+      <div class="col" id="impRun" style="display:none" data-new>
+        <div class="brand">__MARK__<b>Keyhub</b></div>
+        <h1>가져오는 중</h1>
+        <p class="sub">처음 한 번만 진행합니다. 창을 닫지 마세요.</p>
+        <ul class="steps" id="steps">
+          <li><span class="dot">__CHECK__</span>비밀번호 확인</li>
+          <li><span class="dot">__CHECK__</span>이전 데이터 읽기<span class="cnt num" id="cnt1"></span></li>
+          <li><span class="dot">__CHECK__</span>새 암호화로 저장</li>
+          <li><span class="dot">__CHECK__</span>원본과 대조해 검증</li>
+        </ul>
+        <div class="bar"><i id="migBar"></i></div>
+        <div class="bar-cap num"><span id="migCap">키 0 / 34</span><span id="migPct">0%</span></div>
+        <button class="btn primary block" id="migDone" disabled onclick="openVault()">시작하기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FIRST RUN: new vault ============ -->
+  <section class="screen" id="s-create">
+    <div class="wc"><i>__MIN__</i><i>__MAX__</i><i class="x">__X__</i></div>
+    <div class="center">
+      <div class="col" data-new>
+        <div class="brand">__MARK__<b>Keyhub</b></div>
+        <h1>새 금고 만들기</h1>
+        <p class="sub">이 PC에 금고를 하나 만듭니다. 금고를 열 때 쓸 비밀번호를 정하세요.</p>
+        <label class="field"><span>비밀번호</span><input class="input" type="password" placeholder="8자 이상"></label>
+        <label class="field"><span>비밀번호 확인</span><input class="input" type="password" placeholder="한 번 더 입력"></label>
+        <div class="notice">비밀번호는 복구할 수 없습니다. 잊어버리면 금고를 열 방법이 없으니 따로 적어 두세요.</div>
+        <button class="btn primary block" data-click onclick="items.length=0;openVault()">금고 만들기</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ UNLOCK ============ -->
+  <section class="screen" id="s-unlock">
+    <div class="wc"><i>__MIN__</i><i>__MAX__</i><i class="x">__X__</i></div>
+    <div class="center">
+      <div class="col">
+        <div class="brand">__MARK__<b>Keyhub</b></div>
+        <h1>금고 잠금 해제</h1>
+        <p class="sub" id="lockSub">5분 동안 사용하지 않아 자동으로 잠겼습니다.</p>
+        <label class="field"><span>비밀번호</span><input class="input" type="password" id="pw" placeholder="비밀번호 입력"></label>
+        <div class="err" id="pwErr">비밀번호가 맞지 않습니다.</div>
+        <button class="btn primary block" id="unlockBtn">잠금 해제</button>
+        <div class="hint">비밀번호를 5번 틀리면 30초 동안 입력할 수 없습니다.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ VAULT ============ -->
+  <section class="screen" id="s-vault">
+    <div class="shell">
+      <header class="top">
+        <div class="brand">__MARK__<b>Keyhub</b></div>
+        <label class="search"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" placeholder="항목·키 이름 검색"><kbd>Ctrl K</kbd></label>
+        <div class="lockinfo" data-new><span class="num" id="lockLeft">5:00 후 자동 잠금</span><button class="btn ghost icon" title="지금 잠그기" onclick="lockNow()">__LOCK__</button></div>
+        <div class="wc"><i>__MIN__</i><i>__MAX__</i><i class="x">__X__</i></div>
+      </header>
+      <aside class="side">
+        <div class="nav" data-view="all" onclick="setView('all')" data-drop-root><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg><span class="lbl" id="allLbl">모든 항목</span><span class="c num" id="cAll"></span></div>
+        <div class="nav" data-view="fav" onclick="setView('fav')" data-new><svg class="ic" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg><span class="lbl">즐겨찾기</span><span class="c num" id="cFav"></span></div>
+        <div class="nav" data-view="recent" onclick="setView('recent')" data-new><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span class="lbl">최근 본 항목</span></div>
+        <div id="sideFolders"></div>
+        <div class="spacer"></div>
+        <div class="nav" data-view="settings" onclick="setView('settings')" data-new><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span class="lbl">설정</span></div>
+        <div class="nav" onclick="lockNow()" data-new>__LOCK__<span class="lbl">잠그기</span></div>
+      </aside>
+      <main class="sheet" id="sheet">
+        <div class="listpane" id="listpane">
+          <div class="lp-head">
+            <div class="crumbs" id="crumbs"></div>
+            <div class="row"><div style="min-width:0"><h1 id="lpTitle">모든 항목</h1><p class="num" id="lpSub"></p></div>
+              <button class="btn primary" onclick="openModal('item')" id="newItemBtn">__PLUS__ 새 항목</button></div>
+            <div class="chips" id="chips"></div>
+          </div>
+          <div class="rows" id="rows"></div>
+        </div>
+        <div class="detail" id="detail"></div>
+        <div class="settings" id="settings" style="display:none"></div>
+        <div class="note" id="note" data-new><span id="noteText"></span><button id="noteBtn">실행 취소</button></div>
+        <div class="toast" id="toast" data-new>
+          <div class="tr">__COPY__<span id="toastText"></span><button onclick="clearClip()">지금 지우기</button></div>
+          <div class="tb"><i id="toastBar"></i></div>
+        </div>
+      </main>
+    </div>
+  </section>
+
+  <div class="scrim" id="scrim" onclick="if(event.target===this)closeModal()"><div class="dlg" id="dlg"></div></div>
+</div>
+
+<aside class="notes">
+  <div class="nh">
+    <div class="nh-row"><h2>결정할 것</h2><button class="copybtn" id="copyRes">결과 복사</button></div>
+    <p class="lead">옵션을 누르면 시안이 바로 바뀝니다.</p>
+  </div>
+  <div class="nb">
+    <div id="decList"></div>
+    <label><input type="checkbox" id="chg"> 새로 생기는 부분 표시</label>
+  </div>
+</aside>
+
+<div class="cand-pop" id="pop"></div>
+
+<script>
+/* ---------- icons ---------- */
+const IC={
+  MIN:'<svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg>',
+  MAX:'<svg class="ic" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1"/></svg>',
+  X:'<svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  MARK:'<svg class="mark" viewBox="0 0 28 28"><rect width="28" height="28" rx="7" fill="var(--accent)"/><circle cx="11" cy="14" r="4.5" fill="none" stroke="var(--accent-ink)" stroke-width="2"/><path d="M15.5 14H22M19.5 14v3.5M22 14v2.5" stroke="var(--accent-ink)" stroke-width="2" stroke-linecap="round"/></svg>',
+  CHECK:'<svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px;stroke-width:2.5"><path d="m5 12 5 5 9-10"/></svg>',
+  LOCK:'<svg class="ic" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+  PLUS:'<svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  COPY:'<svg class="ic" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a1 1 0 0 1 1-1h9"/></svg>',
+  EYE:'<svg class="ic" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>',
+  EYEOFF:'<svg class="ic" viewBox="0 0 24 24"><path d="M3 3l18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3 3.9M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.6 9.6 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>',
+  STAR:'<svg class="ic" viewBox="0 0 24 24"><path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/></svg>',
+  MOVE:'<svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="m12 11 3 2.5-3 2.5M8 13.5h7"/></svg>',
+  EDIT:'<svg class="ic" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg>',
+  DOTS:'<svg class="ic" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1" fill="currentColor"/><circle cx="12" cy="12" r="1" fill="currentColor"/><circle cx="19" cy="12" r="1" fill="currentColor"/></svg>',
+  FOLDER:'<svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>',
+  FOLDEROPEN:'<svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v1"/><path d="M3 19 5.5 11h15.8L19 19z"/></svg>',
+  CHEV:'<svg class="ic" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></svg>',
+  BACK:'<svg class="ic" viewBox="0 0 24 24" style="width:12px;height:12px"><path d="m15 6-6 6 6 6"/></svg>',
+  TRASH:'<svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
+  X2:'<svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+};
+const winEl=document.getElementById('win');
+winEl.innerHTML=winEl.innerHTML.replace(/__([A-Z0-9]+)__/g,(m,k)=>IC[k]||m);
+
+/* ---------- sample data (synthetic) ---------- */
+const folders=[
+  {id:1,name:'일반',parent:null},{id:2,name:'업무',parent:null},{id:3,name:'개발',parent:2},{id:6,name:'클라우드',parent:3},{id:8,name:'사내 시스템',parent:2},
+  {id:4,name:'금융',parent:null},{id:5,name:'게임',parent:null},{id:7,name:'보관',parent:null},
+];
+folders.forEach((f,i)=>f.order=i);
+const T=['var(--tint-a)','var(--tint-b)','var(--tint-c)'];
+const items=[
+  {id:1,name:'Google',folder:1,fav:true,created:'2021-05-20',edited:'2025-09-02',views:41,seen:2,fields:[['이메일','keyhub.sample@gmail.com'],['비밀번호','Rk8#mq2!vT9pL'],['복구 코드','4821-9930-1174-0062']]},
+  {id:2,name:'네이버',folder:1,fav:false,created:'2021-05-21',edited:'2024-01-15',views:12,seen:30,fields:[['아이디','keyhub_sample'],['비밀번호','naver@2024!Qx']]},
+  {id:3,name:'Discord',folder:1,fav:false,created:'2022-11-03',edited:'2022-11-03',views:3,seen:120,fields:[['이메일','keyhub.sample@gmail.com'],['비밀번호','dc_7Lm$w0Pz']]},
+  {id:4,name:'GitHub',folder:3,fav:true,created:'2021-06-01',edited:'2026-10-28',views:57,seen:1,fields:[['아이디','keyhub-sample'],['비밀번호','gh!9vQ2#lO0x7K'],['Personal access token','ghp_sample0A1b2C3d4E5f6G7h8I9j'],['2FA 복구 코드','8f3a-1c9d']]},
+  {id:5,name:'AWS 콘솔',folder:6,fav:false,created:'2023-02-14',edited:'2025-03-30',views:9,seen:14,fields:[['계정 ID','4402 1187 9031'],['IAM 사용자','deploy-bot'],['비밀번호','Aw$_88kLp!2m']]},
+  {id:6,name:'Vercel',folder:6,fav:false,created:'2024-07-09',edited:'2024-07-09',views:4,seen:60,fields:[['이메일','keyhub.sample@gmail.com'],['비밀번호','vc-31Qn!eR8']]},
+  {id:7,name:'사내 VPN',folder:8,fav:false,created:'2023-09-01',edited:'2026-09-01',views:22,seen:5,fields:[['아이디','sample.jo'],['비밀번호','Vpn#2026q3!'],['서버','vpn.example.internal:1194']]},
+  {id:8,name:'Jira',folder:2,fav:false,created:'2023-09-02',edited:'2023-09-02',views:6,seen:40,fields:[['이메일','sample.jo@example.com'],['비밀번호','jira_Pw!48']]},
+  {id:12,name:'Slack',folder:2,fav:false,created:'2023-09-02',edited:'2024-02-11',views:8,seen:9,fields:[['이메일','sample.jo@example.com'],['비밀번호','slk#Pw2!9']]},
+  {id:9,name:'토스뱅크',folder:4,fav:true,created:'2022-03-12',edited:'2025-12-01',views:18,seen:3,fields:[['아이디','keyhubsample'],['간편 비밀번호','482913'],['계좌번호','1000-2345-6789']]},
+  {id:10,name:'국민은행',folder:4,fav:false,created:'2021-05-23',edited:'2023-04-10',views:7,seen:90,fields:[['아이디','kbsample21'],['비밀번호','Kb!0o0O1lI'],['보안카드 일련번호','2019-0412']]},
+  {id:11,name:'Steam',folder:5,fav:false,created:'2021-08-30',edited:'2021-08-30',views:5,seen:200,fields:[['아이디','keyhub_gamer'],['비밀번호','st3am_Pw#91']]},
+];
+const S={view:'all',folder:null,item:4,q:'',open:{2:true,3:true},topen:{1:true,2:true,3:true},reveal:{}};
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const kids=id=>folders.filter(f=>f.parent===id).sort((a,b)=>a.order-b.order);
+const desc=id=>{let r=[id];kids(id).forEach(k=>r=r.concat(desc(k.id)));return r};
+const countIn=id=>items.filter(i=>desc(id).includes(i.folder)).length;
+const chainOf=fid=>{const p=[];let f=folders.find(x=>x.id===fid);while(f){p.unshift(f);f=folders.find(x=>x.id===f.parent)}return p};
+const pathOf=fid=>chainOf(fid).map(f=>f.name);
+const tintOf=i=>T[i.id%3];
+const ago=d=>d<=1?'오늘':d<7?d+'일 전':d<30?Math.floor(d/7)+'주 전':d<365?Math.floor(d/30)+'달 전':Math.floor(d/365)+'년 전';
+const colorize=v=>esc(v).replace(/(\d)|([^A-Za-z0-9가-힣\s])/g,(m,d,s)=>d?'<span class="d">'+d+'</span>':'<span class="s">'+s+'</span>');
+const nav=()=>winEl.dataset.nav;
+const byName=(a,b)=>a.name.localeCompare(b.name,'ko');
+
+/* ---------- start / unlock ---------- */
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));closeModal()}
+$('#impBtn').onclick=()=>{
+  if(!$('#pwImp').value){$('#impErr').textContent='비밀번호를 입력하세요.';$('#impErr').classList.add('on');return}
+  if($('#pwImp').value==='wrong'){$('#impErr').textContent='비밀번호가 맞지 않습니다. (4번 남음)';$('#impErr').classList.add('on');return}
+  $('#impErr').classList.remove('on');$('#impForm').style.display='none';$('#impRun').style.display='block';runImport();
+};
+$('#pwImp').addEventListener('keydown',e=>{if(e.key==='Enter')$('#impBtn').click()});
+function runImport(){
+  const lis=[...document.querySelectorAll('#steps li')];let t=0;const total=34;
+  const tick=setInterval(()=>{
+    t++;const k=Math.min(total,Math.max(0,Math.round((t-4)*1.4)));
+    const step=t<4?0:k<total?1:t<34?2:t<40?3:4;
+    lis.forEach((l,i)=>l.className=i<step?'done':i===step?'now':'');
+    $('#cnt1').textContent=step>=1?`키 ${k} / ${total}`:'';
+    const pct=Math.min(100,Math.round(t/40*100));
+    $('#migBar').style.width=pct+'%';$('#migCap').textContent=`키 ${k} / ${total}`;$('#migPct').textContent=pct+'%';
+    if(t>=40){clearInterval(tick);$('#migDone').disabled=false}
+  },70);
+}
+$('#unlockBtn').onclick=()=>{
+  if(!$('#pw').value){$('#pwErr').textContent='비밀번호를 입력하세요.';$('#pwErr').classList.add('on');return}
+  if($('#pw').value==='wrong'){$('#pwErr').textContent='비밀번호가 맞지 않습니다. (4번 남음)';$('#pwErr').classList.add('on');return}
+  $('#pwErr').classList.remove('on');$('#pw').value='';openVault();
+};
+$('#pw').addEventListener('keydown',e=>{if(e.key==='Enter')$('#unlockBtn').click()});
+function openVault(){show('s-vault');setView('all');resetLock()}
+function lockNow(msg){$('#lockSub').textContent=msg||'직접 잠갔습니다.';show('s-unlock');setTimeout(()=>$('#pw').focus(),20)}
+let lockT=300,lockI;
+function resetLock(){lockT=300;clearInterval(lockI);lockI=setInterval(()=>{lockT--;$('#lockLeft').textContent=`${Math.floor(lockT/60)}:${String(lockT%60).padStart(2,'0')} 후 자동 잠금`;if(lockT<=0){clearInterval(lockI);lockNow('5분 동안 사용하지 않아 자동으로 잠겼습니다.')}},1000)}
+['mousemove','keydown'].forEach(ev=>document.addEventListener(ev,()=>{if($('#s-vault').classList.contains('on'))lockT=300}));
+
+/* ---------- vault ---------- */
+function setView(v,fid){S.view=v;S.folder=fid??null;S.q='';$('#q').value='';render()}
+function openFolder(fid){
+  if(nav()==='list'){const f=folders.find(x=>x.id===fid);let p=f&&f.parent;while(p!=null){S.topen[p]=true;p=folders.find(x=>x.id===p).parent}S.topen[fid]=!S.topen[fid];render();return}
+  setView('folder',fid);
+}
+function listForView(){
+  const m=nav();
+  if(S.q){const q=S.q.toLowerCase();return{title:`‘${S.q}’ 검색 결과`,items:items.filter(i=>i.name.toLowerCase().includes(q)||i.fields.some(f=>f[0].toLowerCase().includes(q))).sort(byName),folders:folders.filter(f=>f.name.toLowerCase().includes(q)),sub:'path'}}
+  if(S.view==='fav')return{title:'즐겨찾기',items:items.filter(i=>i.fav).sort(byName),folders:[],sub:'path'};
+  if(S.view==='recent')return{title:'최근 본 항목',items:[...items].sort((a,b)=>a.seen-b.seen).slice(0,6),folders:[],sub:'recent'};
+  if(m==='old'){
+    const f=S.view==='folder'?folders.find(x=>x.id===S.folder):null;
+    return{title:f?f.name:'Root',items:items.filter(i=>i.folder===(f?f.id:null)).sort(byName),folders:kids(f?f.id:null),sub:'keys',folder:f,crumbs:true};
+  }
+  if(m==='list'&&S.view!=='folder')return{title:'금고',tree:true,items:items,folders:folders};
+  if(S.view==='folder'){const f=folders.find(x=>x.id===S.folder);
+    return{title:f.name,items:items.filter(i=>i.folder===f.id).sort(byName),folders:m==='path'?[]:kids(f.id),sub:'keys',folder:f,crumbs:m==='path',chips:m==='path'}}
+  return{title:'모든 항목',items:[...items].sort(byName),folders:[],sub:'path',chips:m==='path',crumbs:false};
+}
+function itemRow(i,sub){
+  const s=sub==='recent'?ago(i.seen)+' 봄':sub==='path'?(pathOf(i.folder).join(' › ')||'최상위'):'키 '+i.fields.length+'개 · '+ago(i.seen)+' 봄';
+  return `<div class="it ${S.item===i.id?'sel':''}" onclick="pick(${i.id})" ${dndAttr('item',i.id)}><span class="glyph" style="background:${tintOf(i)}">${esc(i.name[0])}</span><div class="t"><b>${esc(i.name)}</b><span class="num">${s}</span></div>${i.fav?`<span class="star">${IC.STAR.replace('class="ic"','class="ic" style="fill:currentColor;width:14px;height:14px"')}</span>`:''}</div>`;
+}
+function folderRow(f,isSearch){
+  return `<div class="it folder" onclick="openFolder(${f.id})" ${dndAttr('folder',f.id)}><span class="glyph">${IC.FOLDER}</span><div class="t"><b>${esc(f.name)}</b><span class="num">${isSearch?(pathOf(f.parent).join(' › ')||'최상위'):'항목 '+countIn(f.id)+'개'}</span></div></div>`;
+}
+function treeRows(parent,depth){
+  let h='';
+  const ind=d=>'<span class="ind">'+Array.from({length:d},()=>'<i class="l"></i>').join('')+'</span>';
+  kids(parent).forEach(f=>{const open=!!S.topen[f.id];
+    h+=`<div class="it tr folder" onclick="openFolder(${f.id})">${ind(depth)}<span class="tw ${open?'open':''}">${IC.CHEV}</span><span class="glyph">${open?IC.FOLDEROPEN:IC.FOLDER}</span><div class="t"><b>${esc(f.name)}</b></div><span class="c num" style="font-size:12px;color:var(--muted)">${countIn(f.id)}</span></div>`;
+    if(open){h+=treeRows(f.id,depth+1);items.filter(i=>i.folder===f.id).sort(byName).forEach(i=>{
+      h+=`<div class="it tr ${S.item===i.id?'sel':''}" onclick="pick(${i.id})">${ind(depth+1)}<span class="tw"></span><span class="glyph" style="background:${tintOf(i)}">${esc(i.name[0])}</span><div class="t"><b>${esc(i.name)}</b></div>${i.fav?`<span class="star">${IC.STAR.replace('class="ic"','class="ic" style="fill:currentColor;width:14px;height:14px"')}</span>`:''}</div>`})}
+  });
+  return h;
+}
+function render(){
+  const m=nav();
+  document.querySelectorAll('.side .nav[data-view]').forEach(n=>n.classList.toggle('on',n.dataset.view===S.view&&!S.q));
+  $('#allLbl').textContent=m==='list'?'금고':'모든 항목';
+  $('#cAll').textContent=items.length;$('#cFav').textContent=items.filter(i=>i.fav).length;
+  renderSideFolders();
+  const isSet=S.view==='settings';
+  $('#listpane').style.display=isSet?'none':'flex';$('#detail').style.display=isSet?'none':'block';$('#settings').style.display=isSet?'block':'none';
+  if(isSet){renderSettings();return}
+  const L=listForView();
+  if(!L.tree&&!L.items.some(i=>i.id===S.item)&&L.items.length)S.item=L.items[0].id;
+  $('#lpTitle').textContent=L.title;
+  $('#lpSub').textContent=L.tree?`폴더 ${folders.length}개 · 항목 ${items.length}개`:L.folders.length?`폴더 ${L.folders.length}개 · 항목 ${L.items.length}개`:`항목 ${L.items.length}개`;
+  // crumbs
+  let cr='';
+  if(L.crumbs&&!S.q){
+    if(m==='old'){cr=(L.folder?`<a onclick="goUp()">${IC.BACK}상위 폴더로</a><span class="sep">·</span>`:'')+`<a onclick="setView('all')">Root</a>`+chainOf(L.folder?.id).map(c=>`<span class="sep">›</span><a onclick="setView('folder',${c.id})">${esc(c.name)}</a>`).join('');}
+    else{cr=`<a onclick="setView('all')">모든 항목</a>`+chainOf(L.folder.id).slice(0,-1).map(c=>`<span class="sep">›</span><a onclick="setView('folder',${c.id})">${esc(c.name)}</a>`).join('');}
+  }
+  $('#crumbs').innerHTML=cr;
+  // chips (path option): sub-folders of current level
+  $('#chips').innerHTML=(L.chips&&!S.q)?kids(L.folder?L.folder.id:null).map(f=>`<span class="chip" onclick="setView('folder',${f.id})">${IC.FOLDER}${esc(f.name)}<span class="c num">${countIn(f.id)}</span></span>`).join(''):'';
+  let h='';
+  if(L.tree){h=treeRows(null,0)+items.filter(i=>i.folder==null).map(i=>itemRow(i,'keys')).join('');}
+  else{
+    h+=L.folders.map(f=>folderRow(f,!!S.q)).join('');
+    h+=L.items.map(i=>itemRow(i,L.sub)).join('');
+    if(!L.items.length&&!L.folders.length){
+      h=S.q?`<div class="empty">‘${esc(S.q)}’와 일치하는 항목이 없습니다. 항목 이름과 키 이름에서 찾습니다.</div>`
+        :S.view==='fav'?`<div class="empty">아직 즐겨찾기한 항목이 없습니다. 항목 오른쪽 위의 별을 누르면 여기에 모입니다.</div>`
+        :`<div class="empty">이 폴더는 비어 있습니다. <a onclick="openModal('item')">새 항목 만들기</a></div>`;
+    }
+  }
+  $('#rows').innerHTML=h;
+  $('#newItemBtn').style.display=(S.view==='fav'||S.view==='recent'||S.q)?'none':'inline-flex';
+  renderDetail();
+}
+function goUp(){const f=folders.find(x=>x.id===S.folder);if(!f||f.parent==null)setView('all');else setView('folder',f.parent)}
+function renderSideFolders(){
+  const m=nav();let h='';
+  if(m==='tree'){
+    const sel=S.view==='folder'&&!S.q?S.folder:null;const anc=sel!=null?chainOf(sel).map(f=>f.id):[];
+    const row=(f,d,guides)=>{const k=kids(f.id);const open=!!S.open[f.id];const on=sel===f.id;
+      const ind=guides.map(g=>`<i class="${g.line?'l':''} ${g.on?'on':''}"></i>`).join('');
+      let r=`<div class="tn ${on?'on':''} ${!on&&anc.includes(f.id)?'anc':''}" onclick="setView('folder',${f.id})" ${dndAttr('folder',f.id)} data-depth="${d}">
+        <span class="ind">${ind}</span>
+        <span class="tw ${open?'open':''}" onclick="event.stopPropagation();S.open[${f.id}]=!S.open[${f.id}];renderSideFolders()">${k.length?IC.CHEV:''}</span>
+        <span class="fi">${open&&k.length?IC.FOLDEROPEN:IC.FOLDER}</span>
+        <span class="lbl">${esc(f.name)}</span><span class="c num">${countIn(f.id)}</span>
+        <span class="more" title="폴더 메뉴" onclick="event.stopPropagation();openModal('folderMenu',${f.id})">${IC.DOTS}</span></div>`;
+      if(open)r+=k.map(c=>row(c,d+1,guides.concat([{line:true,on:sel!=null&&sel!==f.id&&desc(f.id).includes(sel)}]))).join('');
+      return r};
+    h=`<div class="grp">폴더<button title="새 폴더" onclick="openModal('folder')">${IC.PLUS}</button></div><div class="tree">${kids(null).map(f=>row(f,0,[])).join('')}</div>`;
+  } else if(m==='path'){
+    const top=S.view==='folder'&&!S.q?chainOf(S.folder)[0]?.id:null;
+    h=`<div class="grp">폴더<button title="새 폴더" onclick="openModal('folder')">${IC.PLUS}</button></div>`+kids(null).map(f=>`<div class="nav ${top===f.id?'on':''}" onclick="setView('folder',${f.id})">${IC.FOLDER}<span class="lbl">${esc(f.name)}</span><span class="c num">${countIn(f.id)}</span><span class="more" onclick="event.stopPropagation();openModal('folderMenu',${f.id})">${IC.DOTS}</span></div>`).join('');
+  }
+  $('#sideFolders').innerHTML=h;
+}
+function pick(id){S.item=id;const i=items.find(x=>x.id===id);i.seen=0;S.reveal={};render()}
+function renderDetail(){
+  const L=listForView();
+  const i=items.find(x=>x.id===S.item);
+  if(!i||!(L.tree?true:L.items.includes(i))){
+    $('#detail').innerHTML=`<div class="nosel"><div><b>항목을 선택하세요</b>왼쪽 목록에서 고르면 키와 값이 여기에 보입니다.</div></div>`;return}
+  const p=pathOf(i.folder);
+  $('#detail').innerHTML=`
+    <div class="d-head"><span class="glyph" style="background:${tintOf(i)}">${esc(i.name[0])}</span>
+      <div class="tt"><h2>${esc(i.name)}</h2><p>${p.length?p.map(esc).join(' › '):'최상위'}</p></div>
+      <div class="d-actions">
+        <button class="btn ghost icon favbtn ${i.fav?'on':''}" title="${i.fav?'즐겨찾기 해제':'즐겨찾기'}" onclick="toggleFav(${i.id})" data-new>${IC.STAR}</button>
+        <button class="btn" onclick="openModal('move')" data-new>${IC.MOVE} 이동</button>
+        <button class="btn" onclick="openModal('item',${i.id})">${IC.EDIT} 수정</button>
+        <button class="btn icon" title="더 보기" onclick="event.stopPropagation();$('#dmenu').classList.toggle('on')">${IC.DOTS}</button>
+        <div class="menu" id="dmenu"><button onclick="openModal('dup')">${IC.COPY} 복제</button><button class="neg" onclick="openModal('delItem',${i.id})">${IC.TRASH} 삭제</button></div>
+      </div></div>
+    <div class="fields">
+      ${i.fields.map((f,k)=>`<div class="f"><div class="fk"><small>${esc(f[0])}</small>
+        ${S.reveal[k]?`<div class="fv">${colorize(f[1])}</div>`:`<div class="fv masked">••••••••••••</div>`}</div>
+        <div class="fa"><button class="btn ghost icon" title="${S.reveal[k]?'숨기기':'보기'}" onclick="S.reveal[${k}]=!S.reveal[${k}];renderDetail()">${S.reveal[k]?IC.EYEOFF:IC.EYE}</button>
+        <button class="btn ghost icon" title="복사" onclick="copyVal('${esc(f[0])}')">${IC.COPY}</button></div></div>`).join('')}
+      <div class="addf" onclick="openModal('item',${i.id})">${IC.PLUS} 키 추가</div>
+    </div>
+    <div class="meta num"><div>만든 날<b>${i.created}</b></div><div>마지막 수정<b>${i.edited}</b></div><div data-new>조회<b>${i.views}회 · ${ago(i.seen)}</b></div></div>`;
+}
+document.addEventListener('click',e=>{const m=$('#dmenu');if(m&&!e.target.closest('.d-actions'))m.classList.remove('on')});
+function toggleFav(id){const i=items.find(x=>x.id===id);i.fav=!i.fav;pushBarrier(i.fav?'즐겨찾기 추가':'즐겨찾기 해제');render()}
+$('#q').addEventListener('input',e=>{S.q=e.target.value.trim();render()});
+document.addEventListener('keydown',e=>{if(e.ctrlKey&&e.key.toLowerCase()==='k'&&$('#s-vault').classList.contains('on')){e.preventDefault();$('#q').focus()}});
+
+let clipI;
+function copyVal(k){
+  const secs=30;let left=secs;$('#toast').style.left=S.view==='settings'?'50%':'calc(320px + (100% - 320px) / 2)';$('#toast').classList.add('on');
+  const upd=()=>{$('#toastText').textContent=`‘${k}’ 복사됨 · ${left}초 후 클립보드에서 지워짐`;$('#toastBar').style.width=(left/secs*100)+'%'};
+  clearInterval(clipI);upd();clipI=setInterval(()=>{left--;upd();if(left<=0)clearClip()},1000);
+}
+function clearClip(){clearInterval(clipI);$('#toastText').textContent='클립보드를 비웠습니다';$('#toastBar').style.width='0%';setTimeout(()=>$('#toast').classList.remove('on'),900)}
+
+/* ---------- settings ---------- */
+const SET={theme:'라이트',lock:'5분',clip:'30초',hide:true,minLock:true};
+function seg(key,opts){return `<div class="seg">${opts.map(o=>`<button class="${SET[key]===o?'on':''}" onclick="SET['${key}']='${o}';${key==='theme'?'applyTheme();':''}renderSettings()">${o}</button>`).join('')}</div>`}
+function applyTheme(){winEl.dataset.theme=SET.theme==='시스템'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):SET.theme==='다크'?'dark':'light'}
+function renderSettings(){
+  const keys=items.reduce((a,i)=>a+i.fields.length,0);
+  $('#settings').innerHTML=`
+  <h1>설정</h1><p>바꾸면 바로 저장됩니다.</p>
+  <div class="sec"><div class="sl"><b>화면</b><span>창 테마</span></div><div class="panel">
+    <div class="sw"><div class="st"><b>테마</b><span>시스템을 고르면 Windows 설정을 따라갑니다.</span></div>${seg('theme',['시스템','라이트','다크'])}</div></div></div>
+  <div class="sec" data-new><div class="sl"><b>보안</b><span>자리를 비웠을 때와 값을 복사했을 때의 동작</span></div><div class="panel">
+    <div class="sw"><div class="st"><b>자동 잠금</b><span>마우스·키보드 입력이 없으면 이 시간 뒤에 잠급니다.</span></div>${seg('lock',['1분','5분','15분','30분','안 함'])}</div>
+    <div class="sw"><div class="st"><b>클립보드 자동 삭제</b><span>복사한 값이 클립보드에 남아 있는 시간</span></div>${seg('clip',['15초','30초','60초'])}</div>
+    <div class="sw"><div class="st"><b>값 가려서 보여 주기</b><span>끄면 항목을 열 때 값이 바로 보입니다.</span></div><button class="toggle ${SET.hide?'on':''}" onclick="SET.hide=!SET.hide;renderSettings()"></button></div>
+    <div class="sw"><div class="st"><b>최소화하면 잠그기</b><span>창을 내리면 바로 잠급니다.</span></div><button class="toggle ${SET.minLock?'on':''}" onclick="SET.minLock=!SET.minLock;renderSettings()"></button></div>
+  </div></div>
+  <div class="sec" data-new><div class="sl"><b>금고</b><span>2021-05-20 생성 · 항목 ${items.length}개, 키 ${keys}개</span></div><div class="panel">
+    <div class="sw"><div class="st"><b>비밀번호 변경</b><span>바꿔도 저장된 항목은 그대로 유지됩니다.</span></div><button class="btn" onclick="openModal('pw')">변경</button></div>
+    <div class="sw"><div class="st"><b>지금 잠그기</b><span>단축키 Ctrl+L</span></div><button class="btn" onclick="lockNow()">잠그기</button></div>
+  </div></div>
+  <div class="sec" data-new><div class="sl"><b>백업</b><span>백업 파일은 금고 비밀번호로 암호화됩니다.</span></div><div class="panel">
+    <div class="sw"><div class="st"><b>백업 내보내기</b><span class="num">마지막 백업: 없음 · 항목 ${items.length}개, 폴더 ${folders.length}개</span></div><button class="btn" onclick="openModal('export')">내보내기</button></div>
+    ${winEl.dataset.import==='none'?'':`<div class="sw"><div class="st"><b>백업 가져오기</b><span>${importDesc()}</span></div><button class="btn" onclick="openModal('import')">가져오기</button></div>`}
+  </div></div>
+  <div class="sec dangerz" data-new><div class="sl"><b>금고 초기화</b><span>되돌릴 수 없습니다.</span></div><div class="panel">
+    <div class="sw"><div class="st"><b>모든 데이터 삭제</b><span class="num">항목 ${items.length}개와 키 ${keys}개를 지우고 새 금고 만들기 화면으로 돌아갑니다.</span></div><button class="btn danger" onclick="openModal('reset')">초기화</button></div>
+  </div></div>`;
+}
+function importDesc(){const v=winEl.dataset.import;return v==='add'?'.keyhub 파일의 항목을 새 폴더에 추가합니다.':v==='replace'?'.keyhub 파일로 금고 내용을 통째로 바꿉니다.':'.keyhub 파일의 항목을 새 폴더에 추가하거나, 금고를 통째로 바꿉니다.'}
+
+/* ---------- modals ---------- */
+function radioClick(el){el.parentNode.querySelectorAll('.radio').forEach(r=>r.classList.remove('on'));el.classList.add('on')}
+function openModal(kind,arg){
+  const d=$('#dlg');d.className='dlg';let h='';
+  const it=items.find(x=>x.id===(arg??S.item));
+  if(kind==='item'){
+    const edit=arg!=null&&it;d.classList.add('wide');
+    const rows=(edit?it.fields:[['아이디',''],['비밀번호','']]);
+    h=`<h3>${edit?'항목 수정':'새 항목'}</h3><p>${edit?esc(pathOf(it.folder).join(' › ')||'최상위'):'위치: '+esc((S.view==='folder'?pathOf(S.folder).join(' › '):'최상위'))}</p>
+      <label class="field"><span>항목 이름</span><input class="input" value="${edit?esc(it.name):''}" placeholder="예: GitHub"></label>
+      <div class="kvh"><span>키 이름</span><span>값</span><span></span></div>
+      ${rows.map(r=>`<div class="kv"><input class="input" value="${esc(r[0])}"><input class="input mono" type="password" value="${esc(r[1])}" placeholder="값 입력"><button class="btn ghost icon" title="이 키 삭제">${IC.X2}</button></div>`).join('')}
+      <button class="btn ghost" style="margin:4px 0 16px">${IC.PLUS} 키 추가</button>
+      <div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" onclick="closeModal()">저장</button></div>`;
+  } else if(kind==='folder'){
+    h=`<h3>새 폴더</h3><p>위치: ${S.view==='folder'?esc(pathOf(S.folder).join(' › ')):'최상위'}</p>
+      <label class="field"><span>폴더 이름</span><input class="input" placeholder="예: 쇼핑"></label>
+      <div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" onclick="closeModal()">만들기</button></div>`;
+  } else if(kind==='folderMenu'){
+    const f=folders.find(x=>x.id===arg);
+    h=`<h3>${esc(f.name)} 폴더</h3><p class="num">항목 ${countIn(f.id)}개 · 하위 폴더 ${desc(f.id).length-1}개</p>
+      <div style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn" onclick="openModal('folder')">${IC.EDIT} 이름 바꾸기</button>
+      <button class="btn" onclick="openModal('move',${-f.id})">${IC.MOVE} 다른 폴더로 이동</button>
+      <button class="btn danger" onclick="openModal('delFolder',${f.id})">${IC.TRASH} 폴더 삭제</button></div>
+      <div class="acts" style="margin-top:20px"><button class="btn" onclick="closeModal()">닫기</button></div>`;
+  } else if(kind==='move'){
+    const mf=arg!=null&&arg<0?folders.find(x=>x.id===-arg):null;
+    const banned=mf?desc(mf.id):[];const cur=mf?mf.parent:it.folder;
+    const sel=`onclick="document.querySelectorAll('.pk').forEach(p=>p.classList.remove('on'));this.classList.add('on');document.getElementById('mvGo').disabled=false"`;
+    const row=(f,d)=>{const dis=banned.includes(f.id);const here=f.id===cur;
+      return `<div class="pk ${dis||here?'dis':''}" style="padding-left:${8+d*16}px" ${dis||here?'':sel}>${IC.FOLDER}${esc(f.name)}${here?'<small>지금 위치</small>':dis?'<small>자기 자신 또는 하위 폴더</small>':''}</div>`+kids(f.id).map(c=>row(c,d+1)).join('')};
+    h=`<h3>‘${esc(mf?mf.name:it.name)}’ 이동</h3><p>옮길 폴더를 고르세요.</p>
+      <div class="picker"><div class="pk ${cur==null?'dis':''}" ${cur==null?'':sel}>${IC.FOLDER}최상위${cur==null?'<small>지금 위치</small>':''}</div>${kids(null).map(f=>row(f,1)).join('')}</div>
+      <div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" id="mvGo" disabled onclick="closeModal()">이동</button></div>`;
+  } else if(kind==='delItem'){
+    h=`<h3>‘${esc(it.name)}’ 삭제</h3><p>이 항목과 키 ${it.fields.length}개가 영구 삭제됩니다. 되돌릴 수 없습니다.</p>
+      <div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn danger fill" onclick="closeModal()">삭제</button></div>`;
+  } else if(kind==='delFolder'){
+    const f=folders.find(x=>x.id===arg);
+    h=`<h3>‘${esc(f.name)}’ 폴더 삭제</h3><p class="num">이 폴더에 항목 ${countIn(f.id)}개, 하위 폴더 ${desc(f.id).length-1}개가 있습니다.</p>
+      <div><div class="radio on" onclick="radioClick(this)"><i></i><div><b>폴더만 삭제</b><span>안에 있던 항목과 폴더는 ‘${esc(pathOf(f.parent).join(' › ')||'최상위')}’로 옮깁니다.</span></div></div>
+      <div class="radio" onclick="radioClick(this)"><i></i><div><b>안의 내용까지 모두 삭제</b><span class="num">항목 ${countIn(f.id)}개와 그 안의 키가 영구 삭제됩니다.</span></div></div></div>
+      <div class="acts" style="margin-top:16px"><button class="btn" onclick="closeModal()">취소</button><button class="btn danger fill" onclick="closeModal()">삭제</button></div>`;
+  } else if(kind==='pw'){
+    h=`<h3>비밀번호 변경</h3><p>바꿔도 저장된 항목은 그대로 유지됩니다. 새 비밀번호는 복구할 수 없습니다.</p>
+      <label class="field"><span>현재 비밀번호</span><input class="input" type="password"></label>
+      <label class="field"><span>새 비밀번호</span><input class="input" type="password" placeholder="8자 이상"></label>
+      <label class="field"><span>새 비밀번호 확인</span><input class="input" type="password"></label>
+      <div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" onclick="closeModal()">변경</button></div>`;
+  } else if(kind==='export'){
+    h=`<h3>백업 내보내기</h3><p class="num">항목 ${items.length}개, 폴더 ${folders.length}개를 .keyhub 파일 하나로 저장합니다. 파일은 금고 비밀번호로 암호화됩니다.</p>
+      <label class="field"><span>비밀번호 확인</span><input class="input" type="password" placeholder="금고 비밀번호"></label>
+      <div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" onclick="closeModal()">저장 위치 선택…</button></div>`;
+  } else if(kind==='import'){
+    const v=winEl.dataset.import;
+    const add=`<div class="radio ${v!=='replace'?'on':''}" onclick="radioClick(this)"><i></i><div><b>새 폴더에 추가</b><span>‘가져옴 2026-11-04’ 폴더를 만들고 그 안에 넣습니다. 지금 금고의 항목은 그대로 둡니다.</span></div></div>`;
+    const rep=`<div class="radio ${v==='replace'?'on':''}" onclick="radioClick(this)"><i></i><div><b>금고 전체 교체</b><span>지금 금고 내용을 지우고 백업 내용으로 바꿉니다. 바꾸기 전에 지금 상태를 자동으로 백업해 둡니다.</span></div></div>`;
+    h=`<h3>백업 가져오기</h3><p>keyhub-2026-11-01.keyhub · 항목 12개, 폴더 8개</p>
+      <label class="field"><span>백업 파일 비밀번호</span><input class="input" type="password" placeholder="백업을 만들 때의 금고 비밀번호"></label>
+      <div>${add+rep}</div>
+      <div class="acts" style="margin-top:16px"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" onclick="closeModal()">가져오기</button></div>`;
+  } else if(kind==='reset'){
+    const keys=items.reduce((a,i)=>a+i.fields.length,0);
+    h=`<h3>금고 초기화</h3><p class="num">항목 ${items.length}개와 키 ${keys}개가 이 PC에서 영구 삭제됩니다. 백업 파일이 없으면 되돌릴 수 없습니다.</p>
+      <label class="field"><span>확인을 위해 ‘초기화’를 입력하세요</span><input class="input" placeholder="초기화"></label>
+      <label class="field"><span>비밀번호</span><input class="input" type="password"></label>
+      <div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn danger fill" onclick="show('s-create')">초기화</button></div>`;
+  } else if(kind==='dup'){
+    h=`<h3>‘${esc(it.name)}’ 복제</h3><p>같은 폴더에 ‘${esc(it.name)} 사본’을 만듭니다.</p><div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" onclick="closeModal()">복제</button></div>`;
+  }
+  d.innerHTML=h;$('#scrim').classList.add('on');
+  const first=d.querySelector('input');if(first)setTimeout(()=>first.focus(),10);
+}
+function closeModal(){$('#scrim').classList.remove('on')}
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeModal();hidePop()}});
+
+/* ---------- candidates (mock tool) ---------- */
+const CANDS={};
+function setCand(k,v){
+  winEl.dataset[k]=v;if(k==='dnd')render();
+  if(k==='nav'){if(S.view==='folder'&&v==='list')S.view='all';render()}
+  if(k==='import'){if($('#settings').style.display!=='none')renderSettings();if($('#scrim').classList.contains('on')&&$('#dlg h3')?.textContent==='백업 가져오기')openModal('import');
+    if(v==='none'&&$('#scrim').classList.contains('on'))closeModal();}
+  renderDec();if($('#pop').classList.contains('on'))fillPop($('#pop').dataset.k);
+}
+function optRows(k){
+  const c=CANDS[k],cur=winEl.dataset[k];
+  return c.opts.map((o,n)=>`<button class="opt ${cur===o.v?'on':''}" onclick="setCand('${k}','${o.v}')"><span class="no">옵션${n}</span><span class="ol"><span class="nm">${o.name}${o.old?'<i class="badge old">기존</i>':''}${o.rec?'<i class="badge rec">추천</i>':''}</span><span>${o.desc}</span></span></button>`).join('');
+}
+function renderDec(){$('#decList').innerHTML=!Object.keys(CANDS).length?'<p class="lead" style="margin-top:12px">지금은 정할 것이 없습니다.</p>':Object.keys(CANDS).map(k=>`<div class="dec"><b>${CANDS[k].label}</b>${optRows(k)}</div>`).join('')}
+function fillPop(k){$('#pop').innerHTML=`<b>${CANDS[k].label}</b>`+optRows(k)}
+/* popover: only while Shift is held, opened at the mouse position inside the area */
+let shift=false,hideT;
+const pop=$('#pop');
+function hidePop(){pop.classList.remove('on')}
+function openPopAt(k,x,y){
+  pop.dataset.k=k;fillPop(k);pop.classList.add('on');
+  const w=pop.offsetWidth,h=pop.offsetHeight;
+  let left=x-12,top=y-12;                     // cursor lands inside the popover
+  left=Math.min(Math.max(8,left),innerWidth-w-8);top=Math.min(Math.max(8,top),innerHeight-h-8);
+  pop.style.left=left+'px';pop.style.top=top+'px';
+}
+document.addEventListener('mousemove',e=>{
+  if(e.target.closest('#pop')){clearTimeout(hideT);return}
+  const el=e.target.closest('.win [data-cand]');
+  if(pop.classList.contains('on')){
+    if(el&&el.dataset.cand===pop.dataset.k){clearTimeout(hideT);return}
+    clearTimeout(hideT);hideT=setTimeout(hidePop,350);
+  }
+  if((shift||e.shiftKey)&&el&&!pop.classList.contains('on'))openPopAt(el.dataset.cand,e.clientX,e.clientY);
+});
+pop.addEventListener('mouseleave',()=>{clearTimeout(hideT);hideT=setTimeout(hidePop,350)});
+let lastX=0,lastY=0;document.addEventListener('mousemove',e=>{lastX=e.clientX;lastY=e.clientY},true);
+addEventListener('keydown',e=>{if(e.key!=='Shift')return;shift=true;document.body.classList.add('hit');
+  const el=document.elementFromPoint(lastX,lastY)?.closest('.win [data-cand]');if(el&&!pop.classList.contains('on'))openPopAt(el.dataset.cand,lastX,lastY)});
+addEventListener('keyup',e=>{if(e.key==='Shift'){shift=false;document.body.classList.remove('hit')}});
+addEventListener('blur',()=>{shift=false;document.body.classList.remove('hit')});
+document.addEventListener('mousedown',e=>{if(!e.target.closest('#pop'))hidePop()});
+$('#chg').addEventListener('change',e=>document.body.classList.toggle('changed',e.target.checked));
+function resultText(){
+  return 'Keyhub 시안 선택 결과\n'+Object.keys(CANDS).map(k=>{const c=CANDS[k];const n=c.opts.findIndex(o=>o.v===winEl.dataset[k]);const o=c.opts[n];
+    return `- ${c.label}: 옵션${n} ${o.name}${o.old?' [기존]':''}${o.rec?' [추천]':''}`}).join('\n');
+}
+$('#copyRes').onclick=async()=>{
+  const t=resultText();let ok=false;
+  try{await navigator.clipboard.writeText(t);ok=true}catch(e){}
+  if(!ok){const ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{ok=document.execCommand('copy')}catch(e){}ta.remove()}
+  const b=$('#copyRes');b.textContent=ok?'복사됨':'복사 실패';b.classList.toggle('ok',ok);setTimeout(()=>{b.textContent='결과 복사';b.classList.remove('ok')},1500);
+};
+
+/* ---------- drag & drop + undo history ---------- */
+function dndAttr(kind,id){return `draggable="true" data-dnd="${kind}" data-id="${id}"`}
+let drag=null,hoverOpenT=null;
+const nameOf=(k,id)=>k==='item'?items.find(x=>x.id===id).name:folders.find(x=>x.id===id).name;
+const H={undo:[],redo:[]};
+const snap=()=>({f:folders.map(f=>[f.id,f.parent,f.order]),i:items.map(i=>[i.id,i.folder])});
+function restore(sn){sn.f.forEach(([id,p,o])=>{const f=folders.find(x=>x.id===id);f.parent=p;f.order=o});sn.i.forEach(([id,fo])=>{items.find(x=>x.id===id).folder=fo})}
+function pushBarrier(label){H.undo.push({barrier:true,label});H.redo=[]}
+function note(text,btn,fn){$('#noteText').textContent=text;const b=$('#noteBtn');b.style.display=btn?'':'none';b.textContent=btn||'';b.onclick=fn||null;
+  const n=$('#note');n.classList.add('on');clearTimeout(n._t);n._t=setTimeout(()=>n.classList.remove('on'),6000)}
+function undo(){
+  const e=H.undo[H.undo.length-1];
+  if(!e){note('되돌릴 이동이 없습니다');return}
+  if(e.barrier){note(`‘${e.label}’ 이후라 그 전의 이동은 되돌릴 수 없습니다`);return}
+  H.undo.pop();restore(e.before);H.redo.push(e);render();note(`되돌렸습니다 · ${e.label}`,'다시 실행',redo);
+}
+function redo(){
+  const e=H.redo.pop();if(!e){note('다시 실행할 이동이 없습니다');return}
+  restore(e.after);H.undo.push(e);render();note(`다시 실행했습니다 · ${e.label}`,'실행 취소',undo);
+}
+document.addEventListener('keydown',e=>{
+  if(!$('#s-vault').classList.contains('on')||$('#scrim').classList.contains('on'))return;
+  if(e.target.closest&&e.target.closest('input,textarea'))return;
+  const k=e.key.toLowerCase();
+  if(e.ctrlKey&&!e.shiftKey&&k==='z'){e.preventDefault();undo()}
+  else if(e.ctrlKey&&(k==='y'||(e.shiftKey&&k==='z'))){e.preventDefault();redo()}
+});
+// saving, adding or deleting anything in a dialog blocks undo past that point
+$('#dlg').addEventListener('click',e=>{const b=e.target.closest('.btn.primary,.btn.danger.fill');
+  if(b&&b.id!=='mvGo')pushBarrier(($('#dlg h3')?.textContent||'편집').replace(/[‘’]/g,''))},true);
+
+function canInto(target){
+  if(drag.kind==='item')return items.find(x=>x.id===drag.id).folder!==target;
+  const f=folders.find(x=>x.id===drag.id);
+  if(target!=null&&desc(f.id).includes(target))return false;
+  return f.parent!==target;
+}
+function computeDrop(e){
+  const root=e.target.closest('.win [data-drop-root]');
+  if(root)return drag.kind==='item'?{mode:'into',id:null,el:root}:null;
+  const row=e.target.closest('.win [data-dnd="folder"]');if(!row)return null;
+  const id=+row.dataset.id,f=folders.find(x=>x.id===id);
+  if(drag.kind==='folder'&&row.classList.contains('tn')){
+    const r=row.getBoundingClientRect(),y=(e.clientY-r.top)/r.height;
+    if(y<.28)return{mode:'before',id,parent:f.parent,el:row};
+    if(y>.72)return S.open[id]&&kids(id).length?{mode:'first',id,parent:id,el:row}:{mode:'after',id,parent:f.parent,el:row};
+  }
+  return{mode:'into',id,el:row};
+}
+function valid(d){
+  if(!d)return false;
+  if(d.mode==='into')return canInto(d.id);
+  if(d.id===drag.id)return false;
+  return !(d.parent!=null&&desc(drag.id).includes(d.parent));
+}
+function clearMarks(){document.querySelectorAll('.drop-ok,.drop-no').forEach(x=>x.classList.remove('drop-ok','drop-no'));const l=document.querySelector('.insline');if(l)l.style.display='none'}
+function showLine(d){
+  const tree=document.querySelector('.tree');if(!tree)return;
+  let l=tree.querySelector('.insline');if(!l){l=document.createElement('div');l.className='insline';tree.appendChild(l)}
+  const tr=tree.getBoundingClientRect(),r=d.el.getBoundingClientRect();
+  const depth=(+d.el.dataset.depth||0)+(d.mode==='first'?1:0);
+  const left=depth*16+24;                       // the line starts where that level's names start
+  l.style.left=left+'px';l.style.width=(tr.width-left-4)+'px';
+  l.style.top=((d.mode==='before'?r.top:r.bottom)-tr.top-1)+'px';l.style.display='block';
+}
+document.addEventListener('dragstart',e=>{
+  const src=e.target.closest&&e.target.closest('.win [data-dnd]');if(!src)return;
+  drag={kind:src.dataset.dnd,id:+src.dataset.id};e.dataTransfer.effectAllowed='move';e.dataTransfer.setData('text/plain',nameOf(drag.kind,drag.id));
+  src.classList.add('dragging-src');hidePop();
+});
+document.addEventListener('dragend',()=>{drag=null;clearMarks();document.querySelectorAll('.dragging-src').forEach(x=>x.classList.remove('dragging-src'));clearTimeout(hoverOpenT)});
+document.addEventListener('dragover',e=>{
+  if(!drag)return;const d=computeDrop(e);clearMarks();
+  if(!d){e.dataTransfer.dropEffect='none';return}
+  const ok=valid(d);
+  if(d.mode==='into')d.el.classList.add(ok?'drop-ok':'drop-no');else if(ok)showLine(d);
+  if(ok){e.preventDefault();e.dataTransfer.dropEffect='move'}else e.dataTransfer.dropEffect='none';
+  if(d.mode==='into'&&d.id!=null&&!S.open[d.id]&&kids(d.id).length){clearTimeout(hoverOpenT);const id=d.id;hoverOpenT=setTimeout(()=>{if(drag){S.open[id]=true;renderSideFolders()}},700)}
+});
+document.addEventListener('drop',e=>{
+  if(!drag)return;const d=computeDrop(e);if(!valid(d))return;e.preventDefault();applyDrop(d);
+});
+function applyDrop(d){
+  const before=snap();let label;
+  if(drag.kind==='item'){
+    const i=items.find(x=>x.id===drag.id);i.folder=d.id;
+    label=`‘${i.name}’ → ${d.id==null?'최상위':'‘'+nameOf('folder',d.id)+'’'}`;
+  } else {
+    const f=folders.find(x=>x.id===drag.id),oldParent=f.parent;
+    const parent=d.mode==='into'?d.id:d.parent;
+    const sib=kids(parent).filter(x=>x.id!==f.id);
+    let idx=d.mode==='into'?sib.length:d.mode==='first'?0:sib.findIndex(x=>x.id===d.id)+(d.mode==='after'?1:0);
+    sib.splice(idx,0,f);f.parent=parent;sib.forEach((x,n)=>x.order=n);kids(oldParent).forEach((x,n)=>x.order=n);
+    label=oldParent===parent?`‘${f.name}’ 순서 변경`:`‘${f.name}’ → ${parent==null?'최상위':'‘'+nameOf('folder',parent)+'’'}`;
+    let p=parent;while(p!=null){S.open[p]=true;p=folders.find(x=>x.id===p).parent}
+  }
+  H.undo.push({before,after:snap(),label});H.redo=[];render();
+  note(`옮겼습니다 · ${label}`,'실행 취소',undo);
+}
+
+renderDec();
+</script>
+</body>
+</html>
