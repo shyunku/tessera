@@ -54,7 +54,7 @@ function ClipboardToast({ clip, onClear, left }) {
   );
 }
 
-export default function Vault({ status }) {
+export default function Vault({ status, setStatus }) {
   const settings = status.settings;
   const [snap, setSnap] = useState({ folders: [], items: [], history: {} });
   const [view, setView] = useState({ kind: "all", folderId: null });
@@ -403,7 +403,7 @@ export default function Vault({ status }) {
       case "duplicate":
         return <DuplicateDialog item={m.item} onClose={close} onDone={(id) => done(id)} />;
       default:
-        return <AccountDialogs modal={m} onClose={close} onDone={done} counts={counts} showNote={showNote} />;
+        return <AccountDialogs modal={m} onClose={close} onDone={done} counts={counts} showNote={showNote} refreshStatus={() => api.app.status().then(setStatus)} />;
     }
   }
 

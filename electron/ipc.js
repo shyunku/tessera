@@ -43,6 +43,9 @@ export function registerIpc(service, isTrustedSender) {
     "password:change": (p) => service.changePassword(str(p?.current), str(p?.next)),
     "password:verify": (p) => service.verifyPassword(str(p?.password)),
     "vault:reset": (p) => service.reset(str(p?.password), str(p?.confirm)),
+    "backup:export": (p) => service.exportBackup(str(p?.password)),
+    "backup:pick": () => service.pickBackup(),
+    "backup:import": (p) => service.importBackup(str(p?.token), str(p?.password), p?.mode),
   };
 
   for (const [channel, fn] of Object.entries(routes)) {

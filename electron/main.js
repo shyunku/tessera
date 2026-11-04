@@ -1,4 +1,5 @@
-import { app, BrowserWindow, clipboard, ipcMain, powerMonitor, session, shell } from "electron";
+import { app, BrowserWindow, clipboard, dialog, ipcMain, powerMonitor, session, shell } from "electron";
+import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { configureUserData, dataDir, isDev, legacyDir, preloadPath, rendererIndex } from "./paths.js";
 import { Service } from "./service.js";
@@ -108,7 +109,23 @@ if (!app.requestSingleInstanceLock()) {
 
   app.whenReady().then(() => {
     harden();
-    service = new Service({ dataDir: dataDir(), legacyDir: legacyDir(), clipboard, emit });
+    const filters = [{ name: "Tessera 백업", extensions: ["tessera"] }];
+    const dialogs = {
+      save: async (name) => {
+        const r = await dialog.showSaveDialog(mainWindow, { defaultPath: path.join(app.getPath("documents"), name), filters });
+        return r.canceled ? null : r.filePath;
+      },
+      open: async () => {
+        const r = await dialog.showOpenDialog(mainWindow, { properties: ["openFile"], filters });
+        return r.canceled || !r.filePaths.length ? null : r.filePaths[0];
+      },
+    };
+    // Automated UI checks in development can skip the native file dialogs.
+    if (isDev && process.env.TESSERA_E2E_BACKUP_PATH) {
+      dialogs.save = async () => process.env.TESSERA_E2E_BACKUP_PATH;
+      dialogs.open = async () => process.env.TESSERA_E2E_BACKUP_PATH;
+    }
+    service = new Service({ dataDir: dataDir(), legacyDir: legacyDir(), clipboard, emit, dialogs, appVersion: app.getVersion() });
     registerIpc(service, isTrustedSender);
     registerAppIpc();
     service.startIdleWatch();

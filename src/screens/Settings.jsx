@@ -81,7 +81,7 @@ export default function Settings({ status, counts, open, onLock }) {
           <div className="sw">
             <div className="st">
               <b>백업 내보내기</b>
-              <span className="num">마지막 백업: {s.lastBackupAt ? ymd(s.lastBackupAt) : "없음"} · 항목 {counts.items}개, 폴더 {counts.folders}개</span>
+              <span className="num">마지막 백업: {status.lastBackupAt ? ymd(status.lastBackupAt) : "없음"} · 항목 {counts.items}개, 폴더 {counts.folders}개</span>
             </div>
             <button className="btn" onClick={() => open({ kind: "export" })}>내보내기</button>
           </div>

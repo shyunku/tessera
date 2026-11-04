@@ -485,11 +485,29 @@ export class Vault {
   // Everything lands under parentId (null = top level) in one transaction.
   importData(data, { parentId = null } = {}) {
     const db = this._need();
+    const out = tx(db, () => this._importRows(data, parentId));
+    this._barrier("가져오기");
+    return out;
+  }
+
+  // Replaces every folder and item with the given tree, in one transaction.
+  replaceData(data) {
+    const db = this._need();
+    const out = tx(db, () => {
+      db.exec("DELETE FROM fields; DELETE FROM items; UPDATE folders SET parent_id = NULL; DELETE FROM folders;");
+      return this._importRows(data, null);
+    });
+    this._barrier("데이터 교체");
+    return out;
+  }
+
+  _importRows(data, parentId) {
+    const db = this.db;
     const folders = Array.isArray(data?.folders) ? data.folders : [];
     const items = Array.isArray(data?.items) ? data.items : [];
     const keyToId = new Map();
     const count = { folders: 0, items: 0, fields: 0 };
-    tx(db, () => {
+    {
       const root = this._checkParent(parentId);
       const keys = new Set(folders.map((f) => f.key));
       const insFolder = db.prepare(
@@ -545,8 +563,7 @@ export class Vault {
         count.items += 1;
         count.fields += Array.isArray(it.fields) ? it.fields.length : 0;
       }
-    });
-    this._barrier("가져오기");
+    }
     return { ...count, ids: keyToId };
   }
 
@@ -580,15 +597,6 @@ export class Vault {
           })),
       }));
     return { folders: folders.map(({ position, ...f }) => f), items };
-  }
-
-  // Removes every folder and item (keyring and settings stay).
-  clearData() {
-    const db = this._need();
-    tx(db, () => {
-      db.exec("DELETE FROM fields; DELETE FROM items; UPDATE folders SET parent_id = NULL; DELETE FROM folders;");
-    });
-    this._barrier("데이터 교체");
   }
 
   // ---------- undo / redo (moves only) ----------

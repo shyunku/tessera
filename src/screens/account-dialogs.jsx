@@ -81,12 +81,13 @@ function Reset({ counts, onClose }) {
   );
 }
 
-function Export({ counts, onClose, showNote }) {
+function Export({ counts, onClose, showNote, refreshStatus }) {
   const [pw, setPw] = useState("");
   const { busy, err, run } = useRun();
   const go = async () => {
     const r = await run(() => api.backup.exportTo(pw));
     if (r && r.saved) {
+      refreshStatus();
       onClose();
       showNote(`백업을 저장했습니다 · ${r.fileName}`);
     }
@@ -118,7 +119,7 @@ function Import({ onClose, onDone, showNote }) {
     const r = await run(() => api.backup.importFrom(file.token, pw, mode));
     if (r) {
       onDone();
-      showNote(mode === "add" ? `가져왔습니다 · ‘${r.folderName}’ 폴더에 항목 ${r.items}개` : `모든 데이터를 백업 내용으로 바꿨습니다 · 항목 ${r.items}개`);
+      showNote(r.mode === "add" ? `가져왔습니다 · ‘${r.folderName}’ 폴더에 항목 ${r.items}개` : `모든 데이터를 백업 내용으로 바꿨습니다 · 항목 ${r.items}개 (이전 데이터는 ${r.safetyCopy}로 보관)`);
     }
   };
   return (
@@ -154,14 +155,14 @@ function Import({ onClose, onDone, showNote }) {
   );
 }
 
-export function AccountDialogs({ modal, onClose, onDone, counts, showNote }) {
+export function AccountDialogs({ modal, onClose, onDone, counts, showNote, refreshStatus }) {
   switch (modal.kind) {
     case "password":
       return <ChangePassword onClose={onClose} showNote={showNote} />;
     case "reset":
       return <Reset counts={counts} onClose={onClose} />;
     case "export":
-      return <Export counts={counts} onClose={onClose} showNote={showNote} />;
+      return <Export counts={counts} onClose={onClose} showNote={showNote} refreshStatus={refreshStatus} />;
     case "import":
       return <Import onClose={onClose} onDone={onDone} showNote={showNote} />;
     default:

@@ -5,6 +5,14 @@ import path from "node:path";
 import { Vault, VaultError } from "./store/vault.js";
 import { detectLegacy } from "./legacy/v1.js";
 import { migrateLegacy } from "./legacy/migrate.js";
+import crypto from "node:crypto";
+import { encryptBackup, decryptBackup, readBackupHeader, MAX_BACKUP_BYTES } from "./backup.js";
+
+const ymdOf = (t) => {
+  const d = new Date(t);
+  const p = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+};
 import { WrongPasswordError, CorruptDataError } from "./crypto/vault-crypto.js";
 
 // A damaged file must never look like a wrong password: the user might then reset and lose data.
@@ -41,8 +49,12 @@ function checkNewPassword(pw) {
 
 export class Service {
   // deps: { dataDir, clipboard, emit(event, payload), legacy? }
-  constructor({ dataDir, clipboard, emit, kdf, legacyDir }) {
+  constructor({ dataDir, clipboard, emit, kdf, legacyDir, dialogs, appVersion }) {
     fs.mkdirSync(dataDir, { recursive: true });
+    this.dataDir = dataDir;
+    this.dialogs = dialogs; // { save(defaultName) -> path|null, open() -> path|null }
+    this.appVersion = appVersion || "";
+    this.pendingBackups = new Map();
     this.kdf = kdf;
     this.legacyDir = legacyDir;
     this.vault = new Vault(path.join(dataDir, "tessera.db"), kdf ? { kdf } : undefined);
@@ -126,6 +138,7 @@ export class Service {
       settings: this.settings(),
       lockedUntil: this.lockedUntil > Date.now() ? this.lockedUntil : 0,
       createdAt: this.vault.state === "empty" ? null : Number(this.vault.meta("created_at")) || null,
+      lastBackupAt: this.vault.state === "empty" ? null : Number(this.vault.meta("last_backup_at")) || null,
       legacy: this.legacyInfo(),
     };
   }
@@ -230,6 +243,70 @@ export class Service {
     for (const f of [file, `${file}-journal`, `${file}-wal`, `${file}-shm`]) fs.rmSync(f, { force: true });
     this.emit("vault:locked", { reason: "reset" });
     return this.status();
+  }
+
+  // ---------- backups ----------
+
+  async exportBackup(password) {
+    this.vault._need();
+    await this.verifyPassword(password);
+    const text = await encryptBackup(this.vault.exportData(), password, { appVersion: this.appVersion, kdf: this.kdf });
+    const file = await this.dialogs.save(`tessera-${ymdOf(Date.now())}.tessera`);
+    if (!file) return { saved: false };
+    const tmp = `${file}.tmp`;
+    fs.writeFileSync(tmp, text, { mode: 0o600 });
+    fs.renameSync(tmp, file);
+    this.vault.setMeta("last_backup_at", Date.now());
+    return { saved: true, fileName: path.basename(file) };
+  }
+
+  async pickBackup() {
+    this.vault._need();
+    const file = await this.dialogs.open();
+    if (!file) return null;
+    if (fs.statSync(file).size > MAX_BACKUP_BYTES) throw new VaultError("invalid", "백업 파일이 너무 큽니다.");
+    const text = fs.readFileSync(file, "utf8");
+    let header;
+    try {
+      header = readBackupHeader(text);
+    } catch (e) {
+      throw new VaultError(e.code || "invalid", e.message);
+    }
+    const token = crypto.randomUUID();
+    this.pendingBackups.clear();
+    this.pendingBackups.set(token, { text, fileName: path.basename(file) });
+    return { token, fileName: path.basename(file), createdAt: header.createdAt };
+  }
+
+  async importBackup(token, password, mode) {
+    this.vault._need();
+    if (mode !== "add" && mode !== "replace") throw new VaultError("invalid", "가져오기 방식을 고르세요.");
+    const pending = this.pendingBackups.get(token);
+    if (!pending) throw new VaultError("invalid", "백업 파일을 다시 고르세요.");
+    let tree;
+    try {
+      ({ tree } = await decryptBackup(pending.text, password));
+    } catch (e) {
+      if (e.name === "BackupError") throw new VaultError(e.code, e.message);
+      throw e;
+    }
+    this.pendingBackups.delete(token);
+    if (mode === "add") {
+      const base = `가져옴 ${ymdOf(Date.now())}`;
+      const taken = new Set(this.vault.snapshot().folders.filter((f) => f.parentId == null).map((f) => f.name));
+      let name = base;
+      for (let n = 2; taken.has(name); n++) name = `${base} (${n})`;
+      const folderId = this.vault.createFolder(null, name);
+      const r = this.vault.importData(tree, { parentId: folderId });
+      return { mode, folderName: name, items: r.items, folders: r.folders };
+    }
+    // Keep the current data file (still encrypted with the current password) before replacing.
+    const dir = path.join(this.dataDir, "backups");
+    fs.mkdirSync(dir, { recursive: true });
+    const safety = path.join(dir, `tessera-before-replace-${Date.now()}.db`);
+    fs.copyFileSync(this.vault.file, safety);
+    const r = this.vault.replaceData(tree);
+    return { mode, items: r.items, folders: r.folders, safetyCopy: path.basename(safety) };
   }
 
   dispose() {
