@@ -53,6 +53,34 @@ export class Service {
     this.fails = 0;
     this.lockedUntil = 0;
     this.clip = null; // { text, timer, until }
+    this.lastActivity = Date.now();
+    this.idleTimer = null;
+  }
+
+  // ---------- auto lock ----------
+
+  // The page reports keyboard/mouse activity; the main process enforces the timeout.
+  noteActivity() {
+    this.lastActivity = Date.now();
+  }
+
+  checkIdle(now = Date.now()) {
+    if (this.vault.state !== "unlocked") return false;
+    const minutes = this.settings().autoLockMinutes;
+    if (!minutes) return false;
+    if (now - this.lastActivity < minutes * 60_000) return false;
+    this.lock(`idle:${minutes}`);
+    return true;
+  }
+
+  startIdleWatch(intervalMs = 5_000) {
+    clearInterval(this.idleTimer);
+    this.idleTimer = setInterval(() => this.checkIdle(), intervalMs);
+    this.idleTimer.unref?.();
+  }
+
+  onMinimize() {
+    if (this.settings().lockOnMinimize) this.lock("minimize");
   }
 
   // Old Keyhub data is offered only while there is no Tessera data yet.
@@ -127,11 +155,13 @@ export class Service {
       throw new VaultError("wrong-password", `비밀번호가 맞지 않습니다. (${left}번 남음)`);
     }
     this.fails = 0;
+    this.lastActivity = Date.now();
     return this.status();
   }
 
   lock(reason = "manual") {
     if (this.vault.state !== "unlocked") return;
+    this.clearClipboard(false); // a copied secret should not outlive the session
     this.vault.lock();
     this.emit("vault:locked", { reason });
   }
@@ -203,6 +233,7 @@ export class Service {
   }
 
   dispose() {
+    clearInterval(this.idleTimer);
     this.clearClipboard(false);
     this.vault.close();
   }

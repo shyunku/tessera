@@ -106,3 +106,32 @@ test("password change and reset", async () => {
   assert.equal(st.state, "empty");
   assert.equal(Vault.exists(path.join(dir, "tessera.db")), false, "no keyring or data left");
 });
+
+test("auto lock after the idle time, reset by activity; never when set to 0", async () => {
+  const { s, events } = make();
+  await s.create("long-enough-pw");
+  const t0 = Date.now();
+  s.lastActivity = t0;
+  assert.equal(s.checkIdle(t0 + 4 * 60_000), false);
+  s.noteActivity();
+  assert.equal(s.checkIdle(s.lastActivity + 5 * 60_000), true);
+  assert.equal(s.status().state, "locked");
+  assert.deepEqual(events.at(-1), ["vault:locked", { reason: "idle:5" }]);
+  await s.unlock("long-enough-pw");
+  s.setSetting("autoLockMinutes", 0);
+  assert.equal(s.checkIdle(Date.now() + 10 * 3600_000), false);
+});
+
+test("minimize locks only when the setting is on; lock clears our clipboard value", async () => {
+  const { s, clipboard } = make();
+  await s.create("long-enough-pw");
+  s.setSetting("lockOnMinimize", false);
+  s.onMinimize();
+  assert.equal(s.status().state, "unlocked");
+  const id = s.vault.createItem(null, "item", [{ name: "k", value: "secret" }]);
+  s.copyField(s.vault.getItem(id).fields[0].id);
+  s.setSetting("lockOnMinimize", true);
+  s.onMinimize();
+  assert.equal(s.status().state, "locked");
+  assert.equal(clipboard.text, "");
+});

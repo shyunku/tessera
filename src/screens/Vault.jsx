@@ -689,7 +689,15 @@ function LockInfo({ minutes }) {
   const [last, setLast] = useState(Date.now());
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
-    const bump = () => setLast(Date.now());
+    let sent = 0;
+    const bump = () => {
+      const t = Date.now();
+      setLast(t);
+      if (t - sent > 5000) {
+        sent = t;
+        api.app.activity().catch(() => {});
+      }
+    };
     const evs = ["mousemove", "keydown", "mousedown", "wheel"];
     evs.forEach((e) => window.addEventListener(e, bump, { passive: true }));
     const t = setInterval(() => setNow(Date.now()), 1000);

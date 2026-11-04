@@ -1,4 +1,4 @@
-import { app, BrowserWindow, clipboard, ipcMain, session, shell } from "electron";
+import { app, BrowserWindow, clipboard, ipcMain, powerMonitor, session, shell } from "electron";
 import { pathToFileURL } from "node:url";
 import { configureUserData, dataDir, isDev, legacyDir, preloadPath, rendererIndex } from "./paths.js";
 import { Service } from "./service.js";
@@ -54,6 +54,7 @@ function createWindow() {
   });
 
   mainWindow.once("ready-to-show", () => mainWindow.show());
+  mainWindow.on("minimize", () => service?.onMinimize());
   mainWindow.on("closed", () => {
     mainWindow = null;
   });
@@ -110,6 +111,10 @@ if (!app.requestSingleInstanceLock()) {
     service = new Service({ dataDir: dataDir(), legacyDir: legacyDir(), clipboard, emit });
     registerIpc(service, isTrustedSender);
     registerAppIpc();
+    service.startIdleWatch();
+    // Lock when Windows locks the screen or the machine goes to sleep.
+    powerMonitor.on("lock-screen", () => service.lock("system"));
+    powerMonitor.on("suspend", () => service.lock("system"));
     createWindow();
   });
 

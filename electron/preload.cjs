@@ -18,6 +18,7 @@ contextBridge.exposeInMainWorld("tessera", {
     info: () => ipcRenderer.invoke("app:info"),
     status: () => call("app:status"),
     setTitleBar: (opts) => call("app:titleBar", opts),
+    activity: () => call("app:activity"),
   },
   vault: {
     create: (password) => call("vault:create", { password }),
