@@ -384,12 +384,12 @@ body.changed .win [data-new]{box-shadow:0 0 0 2px #e0a100 inset!important}
     <div class="center">
       <div class="col" data-new>
         <div class="brand">__MARK__<b>Keyhub</b></div>
-        <h1>새 금고 만들기</h1>
-        <p class="sub">이 PC에 금고를 하나 만듭니다. 금고를 열 때 쓸 비밀번호를 정하세요.</p>
+        <h1>처음 시작하기</h1>
+        <p class="sub">Keyhub를 열 때 쓸 마스터 비밀번호를 정하세요.</p>
         <label class="field"><span>비밀번호</span><input class="input" type="password" placeholder="8자 이상"></label>
         <label class="field"><span>비밀번호 확인</span><input class="input" type="password" placeholder="한 번 더 입력"></label>
-        <div class="notice">비밀번호는 복구할 수 없습니다. 잊어버리면 금고를 열 방법이 없으니 따로 적어 두세요.</div>
-        <button class="btn primary block" data-click onclick="items.length=0;openVault()">금고 만들기</button>
+        <div class="notice">비밀번호는 복구할 수 없습니다. 잊어버리면 저장한 데이터를 열 방법이 없으니 따로 적어 두세요.</div>
+        <button class="btn primary block" data-click onclick="items.length=0;openVault()">시작하기</button>
       </div>
     </div>
   </section>
@@ -400,7 +400,7 @@ body.changed .win [data-new]{box-shadow:0 0 0 2px #e0a100 inset!important}
     <div class="center">
       <div class="col">
         <div class="brand">__MARK__<b>Keyhub</b></div>
-        <h1>금고 잠금 해제</h1>
+        <h1>Keyhub 잠금 해제</h1>
         <p class="sub" id="lockSub">5분 동안 사용하지 않아 자동으로 잠겼습니다.</p>
         <label class="field"><span>비밀번호</span><input class="input" type="password" id="pw" placeholder="비밀번호 입력"></label>
         <div class="err" id="pwErr">비밀번호가 맞지 않습니다.</div>
@@ -576,7 +576,7 @@ function listForView(){
     const f=S.view==='folder'?folders.find(x=>x.id===S.folder):null;
     return{title:f?f.name:'Root',items:items.filter(i=>i.folder===(f?f.id:null)).sort(byName),folders:kids(f?f.id:null),sub:'keys',folder:f,crumbs:true};
   }
-  if(m==='list'&&S.view!=='folder')return{title:'금고',tree:true,items:items,folders:folders};
+  if(m==='list'&&S.view!=='folder')return{title:'모든 항목',tree:true,items:items,folders:folders};
   if(S.view==='folder'){const f=folders.find(x=>x.id===S.folder);
     return{title:f.name,items:items.filter(i=>i.folder===f.id).sort(byName),folders:m==='path'?[]:kids(f.id),sub:'keys',folder:f,crumbs:m==='path',chips:m==='path'}}
   return{title:'모든 항목',items:[...items].sort(byName),folders:[],sub:'path',chips:m==='path',crumbs:false};
@@ -601,7 +601,7 @@ function treeRows(parent,depth){
 function render(){
   const m=nav();
   document.querySelectorAll('.side .nav[data-view]').forEach(n=>n.classList.toggle('on',n.dataset.view===S.view&&!S.q));
-  $('#allLbl').textContent=m==='list'?'금고':'모든 항목';
+  $('#allLbl').textContent='모든 항목';
   $('#cAll').textContent=items.length;$('#cFav').textContent=items.filter(i=>i.fav).length;
   renderSideFolders();
   const isSet=S.view==='settings';
@@ -712,19 +712,19 @@ function renderSettings(){
     <div class="sw"><div class="st"><b>값 가려서 보여 주기</b><span>끄면 항목을 열 때 값이 바로 보입니다.</span></div><button class="toggle ${SET.hide?'on':''}" onclick="SET.hide=!SET.hide;renderSettings()"></button></div>
     <div class="sw"><div class="st"><b>최소화하면 잠그기</b><span>창을 내리면 바로 잠급니다.</span></div><button class="toggle ${SET.minLock?'on':''}" onclick="SET.minLock=!SET.minLock;renderSettings()"></button></div>
   </div></div>
-  <div class="sec" data-new><div class="sl"><b>금고</b><span>2021-05-20 생성 · 항목 ${items.length}개, 키 ${keys}개</span></div><div class="panel">
+  <div class="sec" data-new><div class="sl"><b>마스터 비밀번호</b><span>2021-05-20 생성 · 항목 ${items.length}개, 키 ${keys}개</span></div><div class="panel">
     <div class="sw"><div class="st"><b>비밀번호 변경</b><span>바꿔도 저장된 항목은 그대로 유지됩니다.</span></div><button class="btn" onclick="openModal('pw')">변경</button></div>
     <div class="sw"><div class="st"><b>지금 잠그기</b><span>단축키 Ctrl+L</span></div><button class="btn" onclick="lockNow()">잠그기</button></div>
   </div></div>
-  <div class="sec" data-new><div class="sl"><b>백업</b><span>백업 파일은 금고 비밀번호로 암호화됩니다.</span></div><div class="panel">
+  <div class="sec" data-new><div class="sl"><b>백업</b><span>백업 파일은 마스터 비밀번호로 암호화됩니다.</span></div><div class="panel">
     <div class="sw"><div class="st"><b>백업 내보내기</b><span class="num">마지막 백업: 없음 · 항목 ${items.length}개, 폴더 ${folders.length}개</span></div><button class="btn" onclick="openModal('export')">내보내기</button></div>
     ${winEl.dataset.import==='none'?'':`<div class="sw"><div class="st"><b>백업 가져오기</b><span>${importDesc()}</span></div><button class="btn" onclick="openModal('import')">가져오기</button></div>`}
   </div></div>
-  <div class="sec dangerz" data-new><div class="sl"><b>금고 초기화</b><span>되돌릴 수 없습니다.</span></div><div class="panel">
-    <div class="sw"><div class="st"><b>모든 데이터 삭제</b><span class="num">항목 ${items.length}개와 키 ${keys}개를 지우고 새 금고 만들기 화면으로 돌아갑니다.</span></div><button class="btn danger" onclick="openModal('reset')">초기화</button></div>
+  <div class="sec dangerz" data-new><div class="sl"><b>데이터 초기화</b><span>되돌릴 수 없습니다.</span></div><div class="panel">
+    <div class="sw"><div class="st"><b>모든 데이터 삭제</b><span class="num">항목 ${items.length}개와 키 ${keys}개를 지우고 처음 시작하기 화면으로 돌아갑니다.</span></div><button class="btn danger" onclick="openModal('reset')">초기화</button></div>
   </div></div>`;
 }
-function importDesc(){const v=winEl.dataset.import;return v==='add'?'.keyhub 파일의 항목을 새 폴더에 추가합니다.':v==='replace'?'.keyhub 파일로 금고 내용을 통째로 바꿉니다.':'.keyhub 파일의 항목을 새 폴더에 추가하거나, 금고를 통째로 바꿉니다.'}
+function importDesc(){const v=winEl.dataset.import;return v==='add'?'.keyhub 파일의 항목을 새 폴더에 추가합니다.':v==='replace'?'.keyhub 파일로 모든 데이터를 통째로 바꿉니다.':'.keyhub 파일의 항목을 새 폴더에 추가하거나, 모든 데이터를 통째로 바꿉니다.'}
 
 /* ---------- modals ---------- */
 function radioClick(el){el.parentNode.querySelectorAll('.radio').forEach(r=>r.classList.remove('on'));el.classList.add('on')}
@@ -777,20 +777,20 @@ function openModal(kind,arg){
       <label class="field"><span>새 비밀번호 확인</span><input class="input" type="password"></label>
       <div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" onclick="closeModal()">변경</button></div>`;
   } else if(kind==='export'){
-    h=`<h3>백업 내보내기</h3><p class="num">항목 ${items.length}개, 폴더 ${folders.length}개를 .keyhub 파일 하나로 저장합니다. 파일은 금고 비밀번호로 암호화됩니다.</p>
-      <label class="field"><span>비밀번호 확인</span><input class="input" type="password" placeholder="금고 비밀번호"></label>
+    h=`<h3>백업 내보내기</h3><p class="num">항목 ${items.length}개, 폴더 ${folders.length}개를 .keyhub 파일 하나로 저장합니다. 파일은 마스터 비밀번호로 암호화됩니다.</p>
+      <label class="field"><span>비밀번호 확인</span><input class="input" type="password" placeholder="마스터 비밀번호"></label>
       <div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" onclick="closeModal()">저장 위치 선택…</button></div>`;
   } else if(kind==='import'){
     const v=winEl.dataset.import;
-    const add=`<div class="radio ${v!=='replace'?'on':''}" onclick="radioClick(this)"><i></i><div><b>새 폴더에 추가</b><span>‘가져옴 2026-11-04’ 폴더를 만들고 그 안에 넣습니다. 지금 금고의 항목은 그대로 둡니다.</span></div></div>`;
-    const rep=`<div class="radio ${v==='replace'?'on':''}" onclick="radioClick(this)"><i></i><div><b>금고 전체 교체</b><span>지금 금고 내용을 지우고 백업 내용으로 바꿉니다. 바꾸기 전에 지금 상태를 자동으로 백업해 둡니다.</span></div></div>`;
+    const add=`<div class="radio ${v!=='replace'?'on':''}" onclick="radioClick(this)"><i></i><div><b>새 폴더에 추가</b><span>‘가져옴 2026-11-04’ 폴더를 만들고 그 안에 넣습니다. 지금 있는 항목은 그대로 둡니다.</span></div></div>`;
+    const rep=`<div class="radio ${v==='replace'?'on':''}" onclick="radioClick(this)"><i></i><div><b>모든 데이터 교체</b><span>지금 데이터를 모두 지우고 백업 내용으로 바꿉니다. 바꾸기 전에 지금 상태를 자동으로 백업해 둡니다.</span></div></div>`;
     h=`<h3>백업 가져오기</h3><p>keyhub-2026-11-01.keyhub · 항목 12개, 폴더 8개</p>
-      <label class="field"><span>백업 파일 비밀번호</span><input class="input" type="password" placeholder="백업을 만들 때의 금고 비밀번호"></label>
+      <label class="field"><span>백업 파일 비밀번호</span><input class="input" type="password" placeholder="백업을 만들 때의 마스터 비밀번호"></label>
       <div>${add+rep}</div>
       <div class="acts" style="margin-top:16px"><button class="btn" onclick="closeModal()">취소</button><button class="btn primary" onclick="closeModal()">가져오기</button></div>`;
   } else if(kind==='reset'){
     const keys=items.reduce((a,i)=>a+i.fields.length,0);
-    h=`<h3>금고 초기화</h3><p class="num">항목 ${items.length}개와 키 ${keys}개가 이 PC에서 영구 삭제됩니다. 백업 파일이 없으면 되돌릴 수 없습니다.</p>
+    h=`<h3>데이터 초기화</h3><p class="num">항목 ${items.length}개와 키 ${keys}개가 이 PC에서 영구 삭제됩니다. 백업 파일이 없으면 되돌릴 수 없습니다.</p>
       <label class="field"><span>확인을 위해 ‘초기화’를 입력하세요</span><input class="input" placeholder="초기화"></label>
       <label class="field"><span>비밀번호</span><input class="input" type="password"></label>
       <div class="acts"><button class="btn" onclick="closeModal()">취소</button><button class="btn danger fill" onclick="show('s-create')">초기화</button></div>`;
